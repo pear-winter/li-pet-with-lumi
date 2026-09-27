@@ -95,3 +95,5 @@
 #lp-dialog .lp-check input[type=checkbox]{appearance:auto!important;opacity:1!important;position:static!important;display:inline-block!important;flex:0 0 18px}
 #lp-dialog .lp-names{padding:12px;border:1px solid var(--lp-line);border-radius:var(--lp-radius)}
 #lp-dialog .lp-names summary{cursor:pointer}
+
+#lp-quick .lp-hint{grid-column:1/-1;margin:4px 0}

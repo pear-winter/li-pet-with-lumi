@@ -116,6 +116,30 @@ try{
   await page.waitForFunction(()=>testContext.extensionSettings.li_pet_with_lumi.skins['梨梨兔兔']['敲代码'].startsWith('http'));
   await page.getByRole('button',{name:'恢复此动作',exact:true}).click();await page.waitForFunction(()=>!testContext.extensionSettings.li_pet_with_lumi.skins['梨梨兔兔']['敲代码']);
   await page.screenshot({path:`${screenshots}/wardrobe-${viewport.width}.png`});
+  // Explicit actions survive automatic events for two minutes; interaction partners must be on stage.
+  await page.getByRole('button',{name:'关闭桌宠面板'}).click();
+  await page.evaluate(async()=>{window.__liPetWithLumi.dispose();Object.assign(testContext.extensionSettings.li_pet_with_lumi,{gravity:false,wander:false,playful:false,pets:['梨梨兔兔','千千猫猫','千千哥哥'],positions:{'梨梨兔兔':{x:0,y:.8},'千千猫猫':{x:.9,y:.8},'千千哥哥':{x:.5,y:.1}}});const {boot}=await import('/renamed-extension/index.js');boot();});
+  const quick=page.locator('#lp-quick');
+  const openActions=async()=>{await page.locator('.lp-pet').first().click();await quick.getByRole('button',{name:'魔法门',exact:true}).click();await quick.getByRole('button',{name:'动作',exact:true}).click();};
+  await page.locator('.lp-pet').first().click();
+  assert.ok(await page.evaluate(()=>{const m=document.getElementById('lp-quick').getBoundingClientRect(),p=document.querySelector('.lp-pet').getBoundingClientRect();return m.bottom>p.top&&m.left>=0&&m.right<=innerWidth;}));
+  await quick.getByRole('button',{name:'魔法门',exact:true}).click();await quick.getByRole('button',{name:'动作',exact:true}).click();
+  assert.equal(await quick.locator('button').first().textContent(),'互动');
+  await quick.getByRole('button',{name:'跳舞',exact:true}).click();
+  await page.evaluate(()=>{const original=Date.now;window.advance=0;window.restoreActionClock=()=>Date.now=original;Date.now=()=>original()+window.advance;events.emit('GENERATION_STARTED','swipe',{},false);events.emit('GENERATION_ENDED');events.emit('CHAT_CHANGED');const music=document.createElement('div');music.className='ll-player is-playing';document.body.append(music);window.advance=119000;});
+  await page.waitForTimeout(400);assert.equal(await page.locator('.lp-pet').first().getAttribute('data-state'),'跳舞');
+  await page.evaluate(()=>window.advance=121000);await page.waitForFunction(()=>document.querySelector('.lp-pet').dataset.state==='听音乐');
+  await page.evaluate(()=>{restoreActionClock();document.querySelector('.ll-player').remove();});
+  await openActions();await quick.getByRole('button',{name:'互动',exact:true}).click();
+  assert.deepEqual(await quick.locator('button').allTextContents(),['千千猫猫','返回']);
+  await quick.getByRole('button',{name:'千千猫猫',exact:true}).click();await quick.getByRole('button',{name:'贴贴',exact:true}).click();assert.equal(await page.locator('.lp-combo').count(),1);
+  await page.evaluate(()=>{const original=Date.now;window.advance=0;window.restoreActionClock=()=>Date.now=original;Date.now=()=>original()+window.advance;events.emit('GENERATION_STARTED','normal',{},false);events.emit('GENERATION_STOPPED');events.emit('CHAT_CHANGED');const music=document.createElement('div');music.className='ll-player is-playing';document.body.append(music);window.advance=119000;});
+  await page.waitForTimeout(400);assert.equal(await page.locator('.lp-combo').count(),1);
+  await page.screenshot({path:`${screenshots}/chosen-interaction-${viewport.width}.png`});
+  await page.evaluate(()=>window.advance=121000);await page.waitForFunction(()=>!document.querySelector('.lp-combo'));
+  await page.evaluate(()=>{restoreActionClock();document.querySelector('.ll-player').remove();});
+  await page.click('#lp-wand-entry');await page.locator('.lp-card').filter({hasText:'千千猫猫'}).click();await page.getByRole('button',{name:'关闭桌宠面板'}).click();
+  await openActions();await quick.getByRole('button',{name:'互动',exact:true}).click();assert.deepEqual(await quick.locator('button').allTextContents(),['返回']);
   await page.evaluate(()=>window.__liPetWithLumi.dispose());assert.equal(await page.locator('#lp-pets, #lp-dialog, #lp-wand-entry').count(),0);
   assert.deepEqual(errors,[]);console.log(`PASS ${viewport.width}px: menu, layout, tools, status, drag, reload, names, selection, hugs, hide, resize, reload lifecycle, music, magic door, themes, gravity, entry layout, cleanup`);await page.close();
  }

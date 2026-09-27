@@ -1,4 +1,4 @@
-import { createCostumeStore, behaviorAction } from './customization.js';
+import { createCostumeStore, behaviorAction, actionsFor } from './customization.js';
 import { renderWardrobe } from './wardrobe.js';
 import { CATALOG } from './catalog.js';
 import { isMusicPlaying } from './music.js';
@@ -37,9 +37,40 @@ export function boot(){
   function hideMenu(){menu.hidden=true;}
   function quick(p,magic=false){selected=p.name;menu.replaceChildren(el('strong','',magic?'魔法门':label(p.name)));menu.hidden=false;
     const add=(label,fn)=>menu.append(button(label,fn));
-    if(magic){for(const[id,label]of Object.entries(WORKBENCH_PAGES))add(label,()=>launch(id));add('喵喵星绘',()=>launch('meow'));add('梨梨画室',()=>launch('atelier'));add('打开设置面板',()=>{hideMenu();open('settings',p.node);});add('返回',()=>quick(p));}
+    if(magic){add('动作',()=>actionMenu(p));for(const[id,label]of Object.entries(WORKBENCH_PAGES))add(label,()=>launch(id));add('喵喵星绘',()=>launch('meow'));add('梨梨画室',()=>launch('atelier'));add('打开设置面板',()=>{hideMenu();open('settings',p.node);});add('返回',()=>quick(p));}
     else{add('喂食',()=>{hideMenu();feed(p.name);});add('摸摸',()=>{hideMenu();pet(p.name);});add('魔法门',()=>quick(p,true));}
-    const v=viewport(),r=menu.getBoundingClientRect();menu.style.left=clamp(p.x,v.left+6,v.left+v.width-r.width-6)+'px';menu.style.top=clamp(p.y-r.height-8,v.top+6,v.top+v.height-r.height-6)+'px';menu.querySelector('button')?.focus();}
+    positionMenu(p);menu.querySelector('button')?.focus();}
+  function positionMenu(p){
+    const v=viewport(),box=p.node.getBoundingClientRect();let top=box.top,bottom=box.bottom,center=box.left+box.width/2;
+    // Anchor to visible pixels, not the GIF's transparent padding. Remote costumes may disallow canvas reads.
+    if(p.img.complete&&p.img.naturalWidth){try{const canvas=document.createElement('canvas');canvas.width=60;canvas.height=50;const c=canvas.getContext('2d',{willReadFrequently:true});c.drawImage(p.img,0,0,60,50);const data=c.getImageData(0,0,60,50).data;let x0=60,y0=50,x1=0,y1=0;for(let y=0;y<50;y++)for(let x=0;x<60;x++)if(data[(y*60+x)*4+3]>20){x0=Math.min(x0,x);x1=Math.max(x1,x+1);y0=Math.min(y0,y);y1=Math.max(y1,y+1);}if(y1){const scale=Math.min(box.width/p.img.naturalWidth,box.height/p.img.naturalHeight),w=p.img.naturalWidth*scale,h=p.img.naturalHeight*scale;top=box.top+(box.height-h)/2+y0/50*h;bottom=box.top+(box.height-h)/2+y1/50*h;center=box.left+(box.width-w)/2+(x0+x1)/120*w;}}catch{}}
+    menu.style.maxHeight=Math.max(80,v.height-12)+'px';
+    const r=menu.getBoundingClientRect(),above=top-r.height-4;
+    menu.style.left=clamp(center-r.width/2,v.left+6,v.left+v.width-r.width-6)+'px';
+    menu.style.top=clamp(above>=v.top+6?above:bottom+4+r.height<=v.top+v.height-6?bottom+4:above,v.top+6,v.top+v.height-r.height-6)+'px';
+  }
+  function actionMenu(p,view='actions',partner=null){
+    selected=p.name;menu.hidden=false;menu.replaceChildren(el('strong','',view==='partners'?'和谁互动':view==='pair'?`和${label(partner)}互动`:`${label(p.name)} · 动作`));
+    const add=(text,fn)=>menu.append(button(text,fn));
+    if(view==='actions'){
+      add('互动',()=>actionMenu(p,'partners'));
+      for(const action of actionsFor(p.name))add(action.replace(/^互动_/,''),()=>{hideMenu();manual(p,action,'',120000);p.lockUntil=p.until;});
+      add('恢复自动动作',()=>{p.lockUntil=0;p.manual='';hideMenu();});
+      add('返回',()=>quick(p,true));
+    }else if(view==='partners'){
+      const partners=settings.enabled?[...pets.values()].filter(other=>other!==p&&!other.node.hidden&&(comboFor([p.name,other.name])||comboFor([p.name,other.name],true))):[];
+      for(const other of partners)add(label(other.name),()=>actionMenu(p,'pair',other.name));
+      if(!partners.length)menu.append(el('p','lp-hint','桌面上还没有可以一起互动的伙伴。'));
+      add('返回',()=>actionMenu(p));
+    }else{
+      for(const stack of [false,true])if(comboFor([p.name,partner],stack))add(stack?'叠叠乐':partner==='灰鸮g老师'||p.name==='灰鸮g老师'?'一起看书':'贴贴',()=>{
+        const other=pets.get(partner);if(!settings.enabled||!other||other.node.hidden){actionMenu(p,'partners');return;}
+        hideMenu();hug([p.name,partner],stack,120000,true);
+      });
+      add('返回',()=>actionMenu(p,'partners'));
+    }
+    menu.scrollTop=0;positionMenu(p);menu.querySelector('button')?.focus();
+  }
   on(document,'pointerdown',e=>{if(!menu.contains(e.target)&&!e.target.closest?.('.lp-pet'))hideMenu();});
   on(document,'keydown',e=>{if(e.key==='Escape'&&!menu.hidden){hideMenu();pets.get(selected)?.node.focus();}});
   const toast=el('div');toast.id='lp-toast';toast.setAttribute('role','status');toast.hidden=true;document.body.append(toast);
@@ -52,7 +83,7 @@ export function boot(){
   for(const [id,label] of [['home','小小伙伴'],['settings','小设置'],['wardrobe','换装动作']]){
     const b=button(label,()=>showTab(id));b.dataset.tab=id;nav.append(b);const p=el('section','lp-page');p.hidden=true;pages.set(id,p);body.append(p);
   }
-  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.1');dialog.append(head,nav,body,foot);
+  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.2');dialog.append(head,nav,body,foot);
   function showTab(id){if(!pages.has(id))id='home';tab=id;for(const[k,p]of pages)p.hidden=k!==id;for(const b of nav.children)b.setAttribute('aria-selected',String(b.dataset.tab===id));if(id==='wardrobe')renderWardrobe({page:pages.get(id),settings,save,costumes,resolveImage,refresh:refreshCostumes,tell});}
   function open(id='home',opener=null){hideMenu();lastOpener=opener||document.activeElement;renderHome();renderSettings();showTab(id);if(!dialog.open)dialog.showModal();panelOpen=true;close.focus();}
   on(dialog,'close',()=>{panelOpen=false;lastOpener?.isConnected&&lastOpener.focus?.();});
@@ -72,16 +103,17 @@ export function boot(){
   function showAction(p,action){if(p.action===action)return;p.action=action;p.img.src=imageFor(p.name,action);p.node.dataset.state=action;}
   function bubble(p,text,ms=3300){if(!p||!settings.bubbles)return;p.bubble.textContent=text;p.bubble.hidden=false;p.bubbleUntil=Date.now()+ms;}
   function allSay(text){const p=pets.get(selected)||pets.values().next().value;bubble(p,text);}
-  function manual(p,action,text='',ms=4500){if(!p)return;if(group)endCombo();p.lastTouch=Date.now();p.autoManual=false;p.manual=action;p.until=Date.now()+ms;showAction(p,action);if(text)bubble(p,text);}
+  function manual(p,action,text='',ms=4500){if(!p)return;if(group?.names.includes(p.name))endCombo();p.lockUntil=0;p.lastTouch=Date.now();p.autoManual=false;p.manual=action;p.until=Date.now()+ms;showAction(p,action);if(text)bubble(p,text);}
   function pet(name){const p=pets.get(name);if(!p)return;manual(p,mapped(p,'pet')||'待机',`${settings.name||'你'}，再摸一下嘛 ♡`);}
   function feed(name){const p=pets.get(name);if(!p)return;manual(p,mapped(p,'feed')||'待机','今天也被好好照顾啦。',6500);}
-  function endCombo(){if(!group)return;const current=group;group=null;current.node.remove();current.names.forEach((name,i)=>{const p=pets.get(name);if(p){p.node.hidden=false;p.manual='开心蹦蹦';p.until=Date.now()+1800;p.x+=(i?1:-1)*settings.size*.4;place(p);p.lastTouch=Date.now();}});comboCooldown=Date.now()+18000;}
-  function hug(names,stack=false){const key=comboFor(names,stack);if(!key)return false;endCombo();const participants=names.map(n=>pets.get(n));if(participants.some(p=>!p))return false;
+  const locked=p=>p.lockUntil>Date.now()||(group?.lockUntil>Date.now()&&group.names.includes(p.name));
+  function endCombo(force=true){if(!group||(!force&&group.lockUntil>Date.now()))return;const current=group;group=null;current.node.remove();current.names.forEach((name,i)=>{const p=pets.get(name);if(p){p.node.hidden=false;p.manual='开心蹦蹦';p.until=Date.now()+1800;p.x+=(i?1:-1)*settings.size*.4;place(p);p.lastTouch=Date.now();}});comboCooldown=Date.now()+18000;}
+  function hug(names,stack=false,ms=7500,explicit=false){const key=comboFor(names,stack);if(!key)return false;const participants=names.map(n=>pets.get(n));if(participants.some(p=>!p||(!explicit&&locked(p))))return false;if(!explicit&&group?.lockUntil>Date.now())return false;endCombo();participants.forEach(p=>{p.lockUntil=0;p.manual='';});
     const v=viewport(),width=Math.min(v.width-12,settings.size*1.9),height=settings.size*1.5;
     const node=button('',endCombo,'lp-combo');node.setAttribute('aria-label',stack?'叠叠乐，点击散开':'贴贴，点击散开');
     const img=el('img');img.src=imageFor('组合',key);img.referrerPolicy='no-referrer';img.onerror=()=>{if(img.src!==comboAsset(key))img.src=comboAsset(key);};img.alt=names.map(label).join('和')+(stack?'叠叠乐':'贴贴');node.append(img);
     node.style.width=width+'px';node.style.height=height+'px';node.style.left=clamp(participants.reduce((s,p)=>s+p.x,0)/participants.length,v.left+4,v.left+v.width-width-4)+'px';node.style.top=clamp(Math.max(...participants.map(p=>p.y))+settings.size-height,v.top+4,v.top+v.height-height-4)+'px';
-    layer.append(node);participants.forEach(p=>p.node.hidden=true);group={names,node,key,until:Date.now()+7500};return true;
+    layer.append(node);participants.forEach(p=>p.node.hidden=true);group={names,node,key,until:Date.now()+ms,lockUntil:explicit?Date.now()+ms:0};return true;
   }
   function hugAny(stack=false){const names=[...pets.keys()];for(let i=0;i<names.length;i++)for(let j=i+1;j<names.length;j++)if(hug([names[i],names[j]],stack)){dialog.close();return true;}tell(stack?'请放出两只支持叠叠乐的伙伴；g老师只参与双人看书贴贴。':'请放出一组能贴贴的伙伴，例如梨梨兔兔和千千猫猫。');return false;}
   function buildPets(){hideMenu();endCombo();pets.clear();layer.replaceChildren();layer.hidden=!settings.enabled;
@@ -94,7 +126,7 @@ export function boot(){
       node.addEventListener('contextmenu',e=>{e.preventDefault();selected=name;open('home',node);});
       node.addEventListener('pointerdown',e=>{if(e.button!==0)return;hideMenu();selected=name;p.vy=0;p.suppress=false;p.drag={id:e.pointerId,x:e.clientX,y:e.clientY,left:p.x,top:p.y,moved:false};p.lastTouch=Date.now();node.setPointerCapture(e.pointerId);});
       node.addEventListener('pointermove',e=>{const d=p.drag;if(!d||d.id!==e.pointerId)return;if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>7)d.moved=true;if(d.moved){p.x=d.left+e.clientX-d.x;p.y=d.top+e.clientY-d.y;place(p);}});
-      const finish=e=>{const d=p.drag;if(!d||d.id!==e.pointerId)return;p.drag=null;p.suppress=d.moved;if(node.hasPointerCapture(e.pointerId))node.releasePointerCapture(e.pointerId);if(d.moved){remember(p);save();const nearby=[...pets.values()].find(other=>other!==p&&Math.abs(other.x-p.x)<settings.size*.55&&Math.abs(other.y-p.y)<settings.size*.65);if(e.type==='pointerup'&&nearby&&hug([name,nearby.name],true))return;if(!settings.gravity)manual(p,'开心蹦蹦','就在这里陪你。',1900);}};
+      const finish=e=>{const d=p.drag;if(!d||d.id!==e.pointerId)return;p.drag=null;p.suppress=d.moved;if(node.hasPointerCapture(e.pointerId))node.releasePointerCapture(e.pointerId);if(d.moved){remember(p);save();const nearby=[...pets.values()].find(other=>other!==p&&Math.abs(other.x-p.x)<settings.size*.55&&Math.abs(other.y-p.y)<settings.size*.65);if(e.type==='pointerup'&&nearby&&hug([name,nearby.name],true))return;if(!settings.gravity&&!locked(p))manual(p,'开心蹦蹦','就在这里陪你。',1900);}};
       node.addEventListener('pointerup',finish);node.addEventListener('pointercancel',finish);
     });
   }
@@ -136,6 +168,7 @@ export function boot(){
       if(p.bubbleUntil&&now>p.bubbleUntil)p.bubble.hidden=true;
       if(p.manual&&now>=p.until)p.manual='';
       if(p.drag)continue;
+      if(locked(p)){showAction(p,p.manual);continue;}
       if(settings.gravity){const v=viewport(),floor=v.top+v.height-settings.size-4;if(p.y<floor-.1){p.vy+=1500*dt;p.y+=p.vy*dt;place(p);if(p.y>=floor-.1){p.vy=0;manual(p,mapped(p,'land')||'待机','落地啦。',1900);remember(p);save();}else showAction(p,mapped(p,'fall')||'待机');continue;}p.vy=0;}
       if(settings.playful&&!busy&&!musicPlaying&&!p.manual&&now>=p.nextIdle){const pool=['打哈欠','向左看','向右看','打滚','比心','点赞','害羞','打招呼','互动_看书'].filter(a=>CATALOG.pets[p.name].includes(a));p.autoManual=true;p.manual=pool[Math.floor(Math.random()*pool.length)];p.until=now+3000;p.nextIdle=now+10000+Math.random()*15000;}
       const idle=settings.wander?0:now-p.lastTouch,canWalk=settings.wander&&settings.speed>0&&!busy&&!musicPlaying&&!p.manual&&!panelOpen&&(menu.hidden||selected!==p.name);
@@ -150,19 +183,19 @@ export function boot(){
     if(!panelOpen&&menu.hidden&&!busy&&!musicPlaying&&!group&&now>comboCooldown){const list=[...pets.values()].filter(p=>!p.drag&&!p.vy&&!p.manual);outer:for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){const a=list[i],b=list[j];if(Math.abs(a.x-b.x)<settings.size*.5&&Math.abs(a.y-b.y)<20&&hug([a.name,b.name]))break outer;}}
   }
   function listen(name,fn){const event=ctx.eventTypes?.[name]||ctx.event_types?.[name];if(!event||!ctx.eventSource)return;ctx.eventSource.on(event,fn);cleanups.push(()=>ctx.eventSource.removeListener?.(event,fn));}
-  listen('GENERATION_STARTED',(type,options,dryRun)=>{if(dryRun||type==='quiet')return;chatBusy=true;chatStarted=Date.now();if(settings.react){endCombo();for(const p of pets.values()){p.manual='';p.lastTouch=Date.now();showAction(p,mapped(p,'generation')||'待机');}}if(settings.react)allSay('正在写回复，我陪你一起等。');});
+  listen('GENERATION_STARTED',(type,options,dryRun)=>{if(dryRun||type==='quiet')return;chatBusy=true;chatStarted=Date.now();if(settings.react){endCombo(false);for(const p of pets.values()){if(locked(p))continue;p.manual='';p.lastTouch=Date.now();showAction(p,mapped(p,'generation')||'待机');}}if(settings.react)allSay('正在写回复，我陪你一起等。');});
   const stop=()=>{chatBusy=false;typingUntil=0;};
-  function eventAction(event){if(settings.react)for(const p of pets.values()){const a=mapped(p,event);if(a)manual(p,a,'',1800);}}
-  listen('GENERATION_ENDED',()=>{const was=chatBusy;stop();if(was){eventAction('finish');if(settings.react)allSay('这一轮结束啦。');}});listen('GENERATION_STOPPED',()=>{stop();eventAction('stop');});listen('CHAT_CHANGED',()=>{stop();endCombo();eventAction('chatChange');});
+  function eventAction(event){if(settings.react)for(const p of pets.values()){const a=mapped(p,event);if(a&&!locked(p))manual(p,a,'',1800);}}
+  listen('GENERATION_ENDED',()=>{const was=chatBusy;stop();if(was){eventAction('finish');if(settings.react)allSay('这一轮结束啦。');}});listen('GENERATION_STOPPED',()=>{stop();eventAction('stop');});listen('CHAT_CHANGED',()=>{stop();endCombo(false);eventAction('chatChange');});
   on(document,'input',e=>{if(e.target?.id==='send_textarea'){typingUntil=Date.now()+2300;for(const p of pets.values())p.lastTouch=Date.now();}});
-  const resized=()=>{hideMenu();endCombo();for(const p of pets.values())place(p);};on(window,'resize',resized);if(window.visualViewport){on(window.visualViewport,'resize',resized);on(window.visualViewport,'scroll',resized);}
+  const resized=()=>{hideMenu();endCombo(false);if(group){const v=viewport(),r=group.node.getBoundingClientRect();group.node.style.left=clamp(r.left,v.left+4,v.left+v.width-r.width-4)+'px';group.node.style.top=clamp(r.top,v.top+4,v.top+v.height-r.height-4)+'px';}for(const p of pets.values())place(p);};on(window,'resize',resized);if(window.visualViewport){on(window.visualViewport,'resize',resized);on(window.visualViewport,'scroll',resized);}
   on(document,'visibilitychange',()=>{lastFrame=0;if(!document.hidden){resized();activityTick();}});
   on(window,'pagehide',()=>dispose());
   function dispose(){if(disposed)return;disposed=true;cancelAnimationFrame(frame);clearInterval(poll);clearInterval(musicPoll);for(const id of timers)clearTimeout(id);for(const fn of cleanups)fn();for(const p of pets.values())remember(p);save();dialog.close();layer.remove();dialog.remove();toast.remove();menu.remove();customStyle.remove();costumes.dispose();entry.remove();settingsContainer.remove();if(window[OWNER]?.dispose===dispose)delete window[OWNER];}
-  function musicTick(){if(document.hidden)return;const next=settings.enabled&&settings.music&&isMusicPlaying();if(next&&!musicPlaying){endCombo();for(const p of pets.values()){p.lastTouch=Date.now();if(!['吃饭','摸摸头','摔趴趴'].includes(p.manual))p.manual='';}allSay('♪ 一起听音乐吧。');}musicPlaying=next;}
+  function musicTick(){if(document.hidden)return;const next=settings.enabled&&settings.music&&isMusicPlaying();if(next&&!musicPlaying){endCombo(false);for(const p of pets.values()){if(locked(p))continue;p.lastTouch=Date.now();if(!['吃饭','摸摸头','摔趴趴'].includes(p.manual))p.manual='';}allSay('♪ 一起听音乐吧。');}musicPlaying=next;}
   const musicPoll=setInterval(musicTick,300);applyTheme();musicTick();
   buildPets();renderHome();renderSettings();showTab('home');save();const poll=setInterval(activityTick,1500);activityTick();frame=requestAnimationFrame(tick);
-  window[OWNER]={open,dispose,version:'0.3.1'};refreshCostumes();
+  window[OWNER]={open,dispose,version:'0.3.2'};refreshCostumes();
 }
 
 // APP_READY is replayable on supported SillyTavern versions. The guard avoids duplicate mounting.
