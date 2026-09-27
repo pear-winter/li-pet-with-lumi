@@ -97,3 +97,8 @@
 #lp-dialog .lp-names summary{cursor:pointer}
 
 #lp-quick .lp-hint{grid-column:1/-1;margin:4px 0}
+
+#lp-quick .lp-quick-header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+#lp-quick .lp-quick-header strong{min-width:0;overflow-wrap:anywhere}
+#lp-quick .lp-quick-close{display:flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;min-width:36px;min-height:36px;height:36px;padding:0;line-height:1;font-size:24px;background:transparent;color:var(--lp-ink);border:0;box-shadow:none}
+#lp-quick .lp-quick-close:hover{background:var(--lp-soft)}

@@ -36,7 +36,8 @@ export function boot(){
   function applyTheme(){for(const n of [layer,dialog,menu,toast])n.dataset.theme=settings.theme;customStyle.textContent=settings.customCss;}
   const menu=el('div','lp-quick');menu.id='lp-quick';menu.hidden=true;menu.setAttribute('role','dialog');menu.setAttribute('aria-label','桌宠互动');document.body.append(menu);
   function hideMenu(){menu.hidden=true;}
-  function quick(p,magic=false){selected=p.name;menu.replaceChildren(el('strong','',magic?'魔法门':label(p.name)));menu.hidden=false;
+  function quickHeader(title){const head=el('div','lp-quick-header'),close=button('×',hideMenu,'lp-quick-close');close.setAttribute('aria-label','关闭快捷面板');close.title='关闭';head.append(el('strong','',title),close);return head;}
+  function quick(p,magic=false){selected=p.name;menu.replaceChildren(quickHeader(magic?'魔法门':label(p.name)));menu.hidden=false;
     const add=(label,fn)=>menu.append(button(label,fn));
     if(magic){for(const[id,label]of Object.entries(WORKBENCH_PAGES))add(label,()=>launch(id));add('喵喵星绘',()=>launch('meow'));add('梨梨画室',()=>launch('atelier'));add('打开设置面板',()=>{hideMenu();open('settings',p.node);});add('返回',()=>quick(p));}
     else{add('喂食',()=>{hideMenu();feed(p.name);});add('摸摸',()=>{hideMenu();pet(p.name);});add('动作',()=>actionMenu(p));add('魔法门',()=>quick(p,true));}
@@ -51,7 +52,7 @@ export function boot(){
     menu.style.top=clamp(above>=v.top+6?above:bottom+4+r.height<=v.top+v.height-6?bottom+4:above,v.top+6,v.top+v.height-r.height-6)+'px';
   }
   function actionMenu(p,view='actions',partner=null){
-    selected=p.name;menu.hidden=false;menu.replaceChildren(el('strong','',view==='partners'?'和谁互动':view==='pair'?`和${label(partner)}互动`:`${label(p.name)} · 动作`));
+    selected=p.name;menu.hidden=false;menu.replaceChildren(quickHeader(view==='partners'?'和谁互动':view==='pair'?`和${label(partner)}互动`:`${label(p.name)} · 动作`));
     const add=(text,fn)=>menu.append(button(text,fn));
     if(view==='actions'){
       add('互动',()=>actionMenu(p,'partners'));
@@ -85,7 +86,7 @@ export function boot(){
   for(const [id,label] of [['home','小小伙伴'],['settings','小设置'],['wardrobe','换装动作']]){
     const b=button(label,()=>showTab(id));b.dataset.tab=id;nav.append(b);const p=el('section','lp-page');p.hidden=true;pages.set(id,p);body.append(p);
   }
-  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.3');dialog.append(head,nav,body,foot);
+  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.4');dialog.append(head,nav,body,foot);
   function showTab(id){if(!pages.has(id))id='home';tab=id;for(const[k,p]of pages)p.hidden=k!==id;for(const b of nav.children)b.setAttribute('aria-selected',String(b.dataset.tab===id));if(id==='wardrobe')renderWardrobe({page:pages.get(id),settings,save,costumes,resolveImage,refresh:refreshCostumes,tell});}
   function open(id='home',opener=null){hideMenu();lastOpener=opener||document.activeElement;renderHome();renderSettings();showTab(id);if(!dialog.open)dialog.showModal();panelOpen=true;close.focus();}
   on(dialog,'close',()=>{panelOpen=false;lastOpener?.isConnected&&lastOpener.focus?.();});
@@ -209,7 +210,7 @@ export function boot(){
   function musicTick(){if(document.hidden)return;const next=settings.enabled&&settings.music&&isMusicPlaying();if(next&&!musicPlaying){endCombo(false);for(const p of pets.values()){if(locked(p))continue;p.lastTouch=Date.now();if(!['吃饭','摸摸头','摔趴趴'].includes(p.manual))p.manual='';}allSay('♪ 一起听音乐吧。');}musicPlaying=next;}
   const musicPoll=setInterval(musicTick,300);applyTheme();musicTick();
   buildPets();renderHome();renderSettings();showTab('home');save();const poll=setInterval(activityTick,1500);activityTick();frame=requestAnimationFrame(tick);
-  window[OWNER]={open,dispose,version:'0.3.3'};refreshCostumes();
+  window[OWNER]={open,dispose,version:'0.3.4'};refreshCostumes();
 }
 
 // APP_READY is replayable on supported SillyTavern versions. The guard avoids duplicate mounting.

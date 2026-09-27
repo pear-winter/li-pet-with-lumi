@@ -124,14 +124,14 @@ try{
   await page.locator('.lp-pet').first().click();
   assert.ok(await page.evaluate(()=>{const m=document.getElementById('lp-quick').getBoundingClientRect(),p=document.querySelector('.lp-pet').getBoundingClientRect();return m.bottom>p.top&&m.left>=0&&m.right<=innerWidth;}));
   await quick.getByRole('button',{name:'动作',exact:true}).click();
-  assert.equal(await quick.locator('button').first().textContent(),'互动');
+  assert.equal(await quick.locator('button:not(.lp-quick-close)').first().textContent(),'互动');
   await quick.getByRole('button',{name:'跳舞',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.lp-pet').dataset.state==='跳舞'&&document.querySelector('.lp-pet img').complete);await page.waitForTimeout(100);assert.ok(await quick.isVisible());
   await page.evaluate(()=>{const original=Date.now;window.advance=0;window.restoreActionClock=()=>Date.now=original;Date.now=()=>original()+window.advance;events.emit('GENERATION_STARTED','swipe',{},false);events.emit('GENERATION_ENDED');events.emit('CHAT_CHANGED');const music=document.createElement('div');music.className='ll-player is-playing';document.body.append(music);window.advance=119000;});
   await page.waitForTimeout(400);assert.equal(await page.locator('.lp-pet').first().getAttribute('data-state'),'跳舞');
   await page.evaluate(()=>window.advance=121000);await page.waitForFunction(()=>document.querySelector('.lp-pet').dataset.state==='听音乐');
   await page.evaluate(()=>{restoreActionClock();document.querySelector('.ll-player').remove();});
   await openActions();await quick.getByRole('button',{name:'互动',exact:true}).click();
-  assert.deepEqual(await quick.locator('button').allTextContents(),['千千猫猫','返回','关闭动作面板']);
+  assert.deepEqual(await quick.locator('button:not(.lp-quick-close)').allTextContents(),['千千猫猫','返回','关闭动作面板']);
   await quick.getByRole('button',{name:'千千猫猫',exact:true}).click();await quick.getByRole('button',{name:'贴贴',exact:true}).click();await page.waitForSelector('.lp-combo');await page.waitForTimeout(100);assert.ok(await quick.isVisible());assert.equal(await page.locator('.lp-combo').count(),1);
   await page.evaluate(()=>{const original=Date.now;window.advance=0;window.restoreActionClock=()=>Date.now=original;Date.now=()=>original()+window.advance;events.emit('GENERATION_STARTED','normal',{},false);events.emit('GENERATION_STOPPED');events.emit('CHAT_CHANGED');const music=document.createElement('div');music.className='ll-player is-playing';document.body.append(music);window.advance=119000;});
   await page.waitForTimeout(400);assert.equal(await page.locator('.lp-combo').count(),1);
@@ -139,7 +139,7 @@ try{
   await page.evaluate(()=>window.advance=121000);await page.waitForFunction(()=>!document.querySelector('.lp-combo'));
   await page.evaluate(()=>{restoreActionClock();document.querySelector('.ll-player').remove();});
   await page.keyboard.press('Escape');await page.click('#lp-wand-entry');await page.locator('.lp-card').filter({hasText:'千千猫猫'}).click();await page.getByRole('button',{name:'关闭桌宠面板'}).click();
-  await openActions();await quick.getByRole('button',{name:'互动',exact:true}).click();assert.deepEqual(await quick.locator('button').allTextContents(),['返回','关闭动作面板']);
+  await openActions();await quick.getByRole('button',{name:'互动',exact:true}).click();assert.deepEqual(await quick.locator('button:not(.lp-quick-close)').allTextContents(),['返回','关闭动作面板']);
   // Independent entries: Actions is to the left of Magic Door, absent inside it.
   await page.keyboard.press('Escape');await page.locator('.lp-pet').first().click();
   const ar=await quick.getByRole('button',{name:'动作',exact:true}).boundingBox(),mr=await quick.getByRole('button',{name:'魔法门',exact:true}).boundingBox();assert.ok(ar.x<mr.x&&Math.abs(ar.y-mr.y)<2);
