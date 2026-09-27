@@ -2,12 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { access } from 'node:fs/promises';
 import { CATALOG } from '../catalog.js';
-import { PETS, normalize, comboFor, chooseState, count, dayKey, petAsset, comboAsset } from '../core.js';
+import { PETS, normalize, comboFor, chooseState, petLabel, petAsset, comboAsset } from '../core.js';
 
 test('invalid settings and screen positions are normalized; all hidden stays hidden',()=>{
   const s=normalize({pets:[],size:900,speed:-10,positions:{'梨梨兔兔':{x:-2,y:20}},diary:[null,{day:'2026-09-28',pets:-1}],enabled:false});
   assert.equal(s.size,160);assert.equal(s.speed,0);assert.deepEqual(s.pets,[]);assert.equal(s.enabled,false);
-  assert.deepEqual(s.positions['梨梨兔兔'],{x:0,y:1});assert.equal(s.diary[0].pets,0);
+  assert.deepEqual(s.positions['梨梨兔兔'],{x:0,y:1});assert.equal('diary' in s,false);
   assert.deepEqual(normalize(null).pets,['梨梨兔兔','千千猫猫']);
   assert.deepEqual(normalize({pets:['梨梨兔兔','千千猫猫','梨梨兔兔']}).pets,['梨梨兔兔','千千猫猫']);
 });
@@ -28,11 +28,6 @@ test('temporary interaction takes priority over music and generation, then settl
   assert.equal(chooseState({walking:true,direction:-1}),'向左走');
   assert.equal(chooseState({}),'待机');
 });
-test('diary records counts only, bounded to 30 days',()=>{
-  const s=normalize({diary:Array.from({length:35},(_,i)=>({day:'old-'+i,pets:1}))});
-  count(s,'pets');count(s,'feeds');count(s,'hugs');count(s,'focus');count(s,'prompt');
-  assert.equal(s.diary.length,30);assert.deepEqual(s.diary.at(-1),{day:dayKey(),pets:1,feeds:1,hugs:1});
-});
 test('every bundled animation and combination exists locally',async()=>{
   for(const name of PETS)for(const action of CATALOG.pets[name])await access(new URL(petAsset(name,action)));
   for(const key of CATALOG.combos)await access(new URL(comboAsset(key)));
@@ -40,3 +35,5 @@ test('every bundled animation and combination exists locally',async()=>{
 });
 
 test('old dog name and position migrate; focus is removed',()=>{const s=normalize({pets:['哥哥狗狗','千千哥哥'],positions:{'哥哥狗狗':{x:.4,y:.7}},focusEnd:9999999999999});assert.deepEqual(s.pets,['千千哥哥']);assert.deepEqual(s.positions['千千哥哥'],{x:.4,y:.7});assert.equal('focusEnd' in s,false);assert.equal(s.theme,'tavern');assert.equal(s.gravity,false);});
+
+test('custom names preserve stable pet identity and old diary is dropped',()=>{const s=normalize({petNames:{'梨梨兔兔':'  小梨  ','千千猫猫':'','bad':'none'},diary:[{day:'2026-09-28'}],firstDay:'2026-09-28'});assert.equal(petLabel(s,'梨梨兔兔'),'小梨');assert.equal(petLabel(s,'千千猫猫'),'千千猫猫');assert.deepEqual(s.pets,['梨梨兔兔','千千猫猫']);assert.equal('diary' in s,false);assert.equal('firstDay' in s,false);});

@@ -4,7 +4,6 @@ export function toolStatus(win=window,doc=document) {
     workbench: !!(win.__cyll_pear_hub_v1__ || doc.querySelector('#cw-top, #cw-fab, #cw-hub')),
     atelier: typeof win.__pear_nai_studio_v1?.open==='function',
     meow: !!doc.querySelector('#meow-wand-entry, #meow-open-settings, #meow-top-button'),
-    excerpt: typeof win.__pearBookExcerpt?.excerpt==='function',
   };
 }
 export const WORKBENCH_PAGES = {preset:"管理预设",api:"管理 API",worldbook:"管理世界书",archive:"聊天档案馆",history:"回复与分支",sttheme:"酒馆美化",tools:"插件与脚本",beauty:"控制台"};
@@ -32,8 +31,4 @@ export function readActivity(doc=document) {
     meow: !!doc.querySelector('#meow-panel[aria-busy="true"]'),
     reading: !!doc.querySelector('#cw-hub:not([hidden])'),
   };
-}
-export function exportDiary(text,win=window) {
-  if(typeof win.__pearBookExcerpt?.excerpt!=='function')return false;
-  win.__pearBookExcerpt.excerpt(text);return true;
 }

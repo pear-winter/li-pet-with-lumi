@@ -19,15 +19,21 @@ try{
   assert.equal(await page.locator('.lp-card').count(),6);
   await page.screenshot({path:`${screenshots}/home-${viewport.width}.png`});
   assert.ok(await page.evaluate(()=>{const r=document.getElementById('lp-dialog').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&r.height<=innerHeight}));
-  await page.getByRole('button',{name:'一起做事',exact:true}).click();
-  assert.equal(await page.getByText('未检测到',{exact:true}).count(),3);
-  await page.getByRole('button',{name:'打开',exact:true}).first().click();assert.ok(await page.locator('#lp-toast').isVisible());
-  // The original extensions can initialize later.
-  await page.evaluate(()=>mountTools());await page.getByRole('button',{name:'重新检测工具'}).click();assert.equal(await page.getByText('已加载 · 可以打开',{exact:true}).count(),3);
-  await page.getByRole('button',{name:'打开',exact:true}).first().click();assert.equal(await page.locator('#lp-dialog').evaluate(n=>n.open),false);assert.equal(await page.locator('#cw-hub').evaluate(n=>n.hidden),false);
-  await page.evaluate(()=>document.getElementById('cw-hub').hidden=true);
-  await page.click('#lp-wand-entry');await page.getByRole('button',{name:'一起做事',exact:true}).click();await page.getByRole('button',{name:'打开',exact:true}).nth(1).click();assert.ok(await page.evaluate(()=>window.atelierOpened));
-  await page.click('#lp-wand-entry');await page.getByRole('button',{name:'一起做事',exact:true}).click();await page.getByRole('button',{name:'打开',exact:true}).nth(2).click();assert.ok(await page.locator('#meow-dialog').evaluate(n=>n.open));await page.evaluate(()=>document.getElementById('meow-dialog').close());
+  assert.equal(await page.getByRole('button',{name:'一起做事',exact:true}).count(),0);assert.equal(await page.getByRole('button',{name:'陪伴日记',exact:true}).count(),0);
+  const selectedCard=page.locator('.lp-card[aria-pressed=true]').first(),unselectedCard=page.locator('.lp-card[aria-pressed=false]').first();
+  assert.notEqual(await selectedCard.evaluate(n=>getComputedStyle(n).backgroundColor),await unselectedCard.evaluate(n=>getComputedStyle(n).backgroundColor));assert.ok((await selectedCard.textContent()).includes('✓ 已选中'));
+  await page.getByRole('button',{name:'小设置',exact:true}).click();await page.locator('.lp-names summary').click();await page.getByLabel('梨梨兔兔的名字',{exact:true}).fill('小梨');await page.getByLabel('梨梨兔兔的名字',{exact:true}).press('Tab');
+  await page.getByRole('button',{name:'小小伙伴',exact:true}).click();assert.ok(await page.locator('.lp-card').getByText('小梨',{exact:true}).count());assert.equal(await page.getByLabel('选择互动伙伴').locator('option[value="梨梨兔兔"]').textContent(),'小梨');
+  await page.getByRole('button',{name:'换装动作',exact:true}).click();assert.equal(await page.getByLabel('换装伙伴',{exact:true}).locator('option[value="梨梨兔兔"]').textContent(),'小梨');
+  await page.getByRole('button',{name:'关闭桌宠面板'}).click();
+  await page.evaluate(()=>mountTools());
+  for(const [name,check] of [['管理预设','preset'],['梨梨画室','atelier'],['喵喵星绘','meow']]){
+    if(check==='preset')await page.evaluate(()=>window.__cyll_pear_hub_v1__={open:async t=>{window.openedTab=t}});
+    await page.locator('.lp-pet').first().click();await page.getByRole('button',{name:'魔法门',exact:true}).click();await page.getByRole('button',{name,exact:true}).click();
+    if(check==='preset')await page.waitForFunction(()=>window.openedTab==='preset');
+    if(check==='atelier')assert.ok(await page.evaluate(()=>window.atelierOpened));
+    if(check==='meow'){assert.ok(await page.locator('#meow-dialog').evaluate(n=>n.open));await page.evaluate(()=>document.getElementById('meow-dialog').close());}
+  }
   await page.evaluate(()=>{document.getElementById('pear-nai-host').shadowRoot.querySelector('.header-wait').hidden=false});
   await page.waitForFunction(()=>[...document.querySelectorAll('.lp-pet')].every(p=>p.dataset.state==='敲代码'));
   await page.evaluate(()=>{document.getElementById('pear-nai-host').shadowRoot.querySelector('.header-wait').hidden=true;document.getElementById('meow-panel').setAttribute('aria-busy','true')});
@@ -39,9 +45,9 @@ try{
   const before=await page.locator('.lp-pet').first().boundingBox();await page.mouse.move(before.x+50,before.y+50);await page.mouse.down();await page.mouse.move(40,170,{steps:8});await page.mouse.up();
   const after=await page.locator('.lp-pet').first().boundingBox();assert.ok(Math.abs(before.y-after.y)>20);
   // Reload persists drag positions, and dry-run generation does not animate.
-  await page.reload();await page.waitForSelector('.lp-pet');const persisted=await page.locator('.lp-pet').first().boundingBox();assert.ok(Math.abs(persisted.y-after.y)<3);
+  await page.reload();await page.waitForSelector('.lp-pet');assert.equal(await page.evaluate(()=>testContext.extensionSettings.li_pet_with_lumi.petNames['梨梨兔兔']),'小梨');const persisted=await page.locator('.lp-pet').first().boundingBox();assert.ok(Math.abs(persisted.y-after.y)<3);
   await page.click('#lp-wand-entry');await page.getByRole('button',{name:'喂食',exact:true}).click();assert.equal(await page.locator('#lp-dialog').evaluate(n=>n.open),false);assert.ok(await page.locator('.lp-pet[data-state="吃饭"]').count());
-  await page.click('#lp-wand-entry');await page.getByRole('button',{name:'陪伴日记',exact:true}).click();assert.ok((await page.locator('.lp-diary').textContent()).includes('1 份小零食'));await page.evaluate(()=>mountTools());await page.getByRole('button',{name:'放进工作台书摘'}).click();assert.ok((await page.evaluate(()=>window.excerptText)).includes('1 份小零食'));
+  assert.equal(await page.evaluate(()=>'diary' in testContext.extensionSettings.li_pet_with_lumi),false);
   await page.click('#lp-wand-entry');await page.getByRole('button',{name:'♡ 一起贴贴',exact:true}).click();assert.equal(await page.locator('.lp-combo').count(),1);await page.screenshot({path:`${screenshots}/hug-${viewport.width}.png`});await page.locator('.lp-combo').click();assert.equal(await page.locator('.lp-combo').count(),0);
   await page.click('#lp-wand-entry');await page.getByRole('button',{name:'暂时藏起来'}).click();await page.getByRole('button',{name:'关闭桌宠面板'}).click();assert.equal(await page.locator('#lp-pets').isVisible(),false);
   await page.click('#lp-wand-entry');await page.getByRole('button',{name:'让伙伴出来'}).click();await page.getByRole('button',{name:'小设置',exact:true}).click();await page.getByRole('button',{name:'把伙伴叫回屏幕边上'}).click();await page.getByRole('button',{name:'关闭桌宠面板'}).click();
@@ -111,6 +117,6 @@ try{
   await page.getByRole('button',{name:'恢复此动作',exact:true}).click();await page.waitForFunction(()=>!testContext.extensionSettings.li_pet_with_lumi.skins['梨梨兔兔']['敲代码']);
   await page.screenshot({path:`${screenshots}/wardrobe-${viewport.width}.png`});
   await page.evaluate(()=>window.__liPetWithLumi.dispose());assert.equal(await page.locator('#lp-pets, #lp-dialog, #lp-wand-entry').count(),0);
-  assert.deepEqual(errors,[]);console.log(`PASS ${viewport.width}px: menu, layout, tools, status, drag, reload, diary, hugs, hide, resize, reload lifecycle, music, magic door, themes, gravity, entry layout, cleanup`);await page.close();
+  assert.deepEqual(errors,[]);console.log(`PASS ${viewport.width}px: menu, layout, tools, status, drag, reload, names, selection, hugs, hide, resize, reload lifecycle, music, magic door, themes, gravity, entry layout, cleanup`);await page.close();
  }
 }finally{await browser.close();server.close();}
