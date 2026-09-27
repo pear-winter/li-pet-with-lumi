@@ -1,0 +1,12 @@
+{
+  "display_name": "梨间雪 · 酒馆桌宠",
+  "loading_order": 110,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "梨梨 × Lumi",
+  "version": "0.1.0",
+  "homePage": "https://github.com/pear-winter/li-pet-with-lumi",
+  "minimum_client_version": "1.19.0"
+}

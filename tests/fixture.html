@@ -1,0 +1,15 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>酒馆桌宠兼容测试</title>
+<style>body{margin:0;background:#262927;color:#ddd;font:15px system-ui}header{padding:18px;border-bottom:1px solid #555}main{max-width:720px;margin:30px auto;padding:20px}#extensionsMenu{position:fixed;top:70px;left:10px;background:#363b35;padding:10px;border-radius:8px}#send_textarea{position:fixed;bottom:16px;left:10%;width:80%;height:48px;background:#41473f;color:#fff;border-radius:12px}button{cursor:pointer}#extensions_settings2{display:none}#cw-hub{position:fixed;inset:15%;background:#fff;color:#222;padding:25px}dialog{background:white}</style>
+<header>酒馆 · 本地兼容测试 <span id="top-settings-holder"></span></header><main><p>桌宠会陪你聊天和画画。</p><p>这里使用模拟的酒馆事件与工具入口，不连接任何模型。</p></main><div id="extensionsMenu"></div><div id="extensions_settings2"></div><textarea id="send_textarea" aria-label="聊天输入"></textarea>
+<link rel="stylesheet" href="/renamed-extension/style.css">
+<script>
+const callbacks=new Map();window.events={on:(n,f)=>{if(!callbacks.has(n))callbacks.set(n,new Set());callbacks.get(n).add(f)},removeListener:(n,f)=>callbacks.get(n)?.delete(f),emit:(n,...a)=>callbacks.get(n)?.forEach(f=>f(...a))};
+window.testContext={extensionSettings:JSON.parse(localStorage.getItem('test-settings')||'{"li_pet_with_lumi":{"wander":false}}'),eventSource:events,eventTypes:Object.fromEntries(['APP_READY','GENERATION_STARTED','GENERATION_ENDED','GENERATION_STOPPED','CHAT_CHANGED'].map(k=>[k,k])),saveSettingsDebounced(){localStorage.setItem('test-settings',JSON.stringify(this.extensionSettings))}};
+window.SillyTavern={getContext:()=>testContext};
+window.mountTools=()=>{
+ const wb=document.createElement('section');wb.id='cw-hub';wb.hidden=true;document.body.append(wb);const top=document.createElement('button');top.id='cw-top';top.textContent='工作台';top.onclick=()=>{wb.hidden=!wb.hidden};document.getElementById('top-settings-holder').append(top);window.__cyll_pear_hub_v1__={dispose(){}};
+ window.__pearBookExcerpt={excerpt:text=>{window.excerptText=text}};
+ const atelier=document.createElement('div');atelier.id='pear-nai-host';document.body.append(atelier);atelier.attachShadow({mode:'open'}).innerHTML='<div class="shell" hidden><div class="header-wait" hidden></div></div>';window.__pear_nai_studio_v1={open:()=>{atelier.shadowRoot.querySelector('.shell').hidden=false;window.atelierOpened=true}};
+ const m=document.createElement('dialog');m.id='meow-dialog';m.innerHTML='<div id="meow-panel" aria-busy="false"><button id="meow-stop" hidden>停止</button></div>';document.body.append(m);const entry=document.createElement('button');entry.id='meow-wand-entry';entry.textContent='Meow';entry.onclick=()=>m.showModal();document.getElementById('extensionsMenu').append(entry);
+};
+</script><script type="module" src="/renamed-extension/index.js"></script></html>
