@@ -7,7 +7,9 @@ export function toolStatus(win=window,doc=document) {
     excerpt: typeof win.__pearBookExcerpt?.excerpt==='function',
   };
 }
+export const WORKBENCH_PAGES = {preset:"管理预设",api:"管理 API",worldbook:"管理世界书",archive:"聊天档案馆",history:"回复与分支",sttheme:"酒馆美化",tools:"插件与脚本",beauty:"控制台"};
 export function openTool(id,win=window,doc=document) {
+  if((id==='workbench'||Object.hasOwn(WORKBENCH_PAGES,id))&&typeof win.__cyll_pear_hub_v1__?.open==='function'){return Promise.resolve(win.__cyll_pear_hub_v1__.open(id==='workbench'?undefined:id)).then(()=>true);}
   if(id==='atelier' && typeof win.__pear_nai_studio_v1?.open==='function'){win.__pear_nai_studio_v1.open();return true;}
   if(id==='workbench'){
     const panel=doc.querySelector('#cw-hub');

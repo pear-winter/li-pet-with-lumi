@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="/renamed-extension/style.css">
 <script>
 const callbacks=new Map();window.events={on:(n,f)=>{if(!callbacks.has(n))callbacks.set(n,new Set());callbacks.get(n).add(f)},removeListener:(n,f)=>callbacks.get(n)?.delete(f),emit:(n,...a)=>callbacks.get(n)?.forEach(f=>f(...a))};
-window.testContext={extensionSettings:JSON.parse(localStorage.getItem('test-settings')||'{"li_pet_with_lumi":{"wander":false}}'),eventSource:events,eventTypes:Object.fromEntries(['APP_READY','GENERATION_STARTED','GENERATION_ENDED','GENERATION_STOPPED','CHAT_CHANGED'].map(k=>[k,k])),saveSettingsDebounced(){localStorage.setItem('test-settings',JSON.stringify(this.extensionSettings))}};
+window.testContext={extensionSettings:JSON.parse(localStorage.getItem('test-settings')||'{"li_pet_with_lumi":{"wander":false,"playful":false}}'),eventSource:events,eventTypes:Object.fromEntries(['APP_READY','GENERATION_STARTED','GENERATION_ENDED','GENERATION_STOPPED','CHAT_CHANGED'].map(k=>[k,k])),saveSettingsDebounced(){localStorage.setItem('test-settings',JSON.stringify(this.extensionSettings))}};
 window.SillyTavern={getContext:()=>testContext};
 window.mountTools=()=>{
  const wb=document.createElement('section');wb.id='cw-hub';wb.hidden=true;document.body.append(wb);const top=document.createElement('button');top.id='cw-top';top.textContent='工作台';top.onclick=()=>{wb.hidden=!wb.hidden};document.getElementById('top-settings-holder').append(top);window.__cyll_pear_hub_v1__={dispose(){}};

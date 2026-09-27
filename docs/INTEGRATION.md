@@ -25,13 +25,13 @@ SillyTavern 通过 `window.SillyTavern.getContext()` 访问 `extensionSettings`�
 | Meow 0.9.15 | `#meow-wand-entry` / `#meow-open-settings` / `#meow-top-button` | 原入口点击，已打开时不重复 |
 | Meow 任务状态 | `#meow-panel[aria-busy="true"]` | 原扩展设置的忙碌状态，仅布尔值 |
 
-工作台当前没有公开 `open` 函数，因此入口同时关闭时明确提示用户，不直接改它的隐藏 DOM 或草稿。日记接收依赖书摘功能，未安装时明确提示。所有适配每次按需重新解析，不缓存已失效的脚本函数。
+工作台当前提供 `window.__cyll_pear_hub_v1__.open(tab)`；魔法门传入经源码核对的分页 ID。保留旧版总入口 DOM 回退；旧版没有分页 API 时不打开原生页面。日记接收依赖书摘功能，未安装时明确提示。所有适配每次按需重新解析，不缓存已失效的脚本函数。
 
-未修改 fetch/XMLHttpRequest，也未读取网络请求、提示词、聊天正文、画室设置、IndexedDB、凭证或原工具 localStorage。检测每 1.5 秒一次，页面隐藏或桌宠关闭时跳过工具状态读取；不遍历聊天楼层。
+未修改 fetch/XMLHttpRequest，也未读取网络请求、提示词、聊天正文、画室设置、IndexedDB、凭证或原工具 localStorage。检测每 1.5 秒一次，页面隐藏或桌宠关闭时跳过工具状态读取；音乐兼容层每 300ms 检查已挂载播放器与最多四层同源 iframe，暂停/移除后不保留过期来源。
 
 ## 持久化与生命周期
 
-当前用户的 `extensionSettings.li_pet_with_lumi` 保存开关、角色、相对位置、称呼、大小、速度、开始日期、专注结束时间、最多 30 天互动计数。无网络同步和账号配对。
+当前用户的 `extensionSettings.li_pet_with_lumi` 保存开关、角色、相对位置、称呼、大小、速度、开始日期、重力、音乐与随机动作开关、主题、自定义 CSS、最多 30 天互动计数。无网络同步和账号配对。
 
 `window.__liPetWithLumi` 提供 `open(page)`、`dispose()` 与 `version`，方便后续协作。重新初始化先清理旧实例；清理动画帧、定时器、事件、面板和入口。素材 GIF 存在本仓库，运行时无外链依赖。
 
@@ -40,3 +40,7 @@ SillyTavern 通过 `window.SillyTavern.getContext()` 访问 `extensionSettings`�
 后续可由三个工具共同提供命名一致的 `open`、任务开始／完成／失败事件，从而替换 DOM 兼容层。若要让桌宠请求画图，需要另外设计可审阅的草稿、确认按钮与取消机制。与桌面版互联也应作为独立功能，不复用或泄露 API Key、聊天正文。
 
 新增角色或动作后同步 `catalog.js` 并运行素材完整性测试。不要把复杂剧情后缀当成随机基础动作，尊重原版关系和 g老师不叠叠乐的规则。
+
+## 0.2.0 音乐与素材
+
+`music.js` 识别 `.ll-player.is-playing` 和包含 `#song-sheet` 的琴房播放器 `.ct .mn[title="暂停"]`。四份用户正则都使用这一播放按钮状态；标准 audio/video 检查 paused、ended、muted、volume 与 readyState。不重写 Web Audio、不触碰网络层。跨域或 opaque-origin iframe 无法读取时忽略。听歌用跳舞素材与音符装饰；手动互动优先，之后继续听歌。新增素材来自 Lumi 桌面仓库，只取实际存在的基础动作，不随机使用剧情组合。

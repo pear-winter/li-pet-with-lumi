@@ -21,3 +21,5 @@ test('meow busy state comes from aria-busy, not presence of stop button',()=>{
   assert.equal(readActivity(doc({'#meow-stop':{}})).meow,false);
   assert.equal(readActivity(doc({'#meow-panel[aria-busy="true"]':{}})).meow,true);
 });
+
+test('magic door targets the workbench public API, not native pages',async()=>{let tab;const win={__cyll_pear_hub_v1__:{open:async t=>{tab=t}}};for(const id of ['preset','api','worldbook','archive','history','sttheme','tools','beauty']){assert.equal(await openTool(id,win,doc()),true);assert.equal(tab,id);}});

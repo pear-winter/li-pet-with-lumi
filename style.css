@@ -55,3 +55,31 @@
 #lp-wand-entry{width:100%;text-align:left;background:transparent;border:0;color:inherit;font:inherit;cursor:pointer;padding:8px 12px}
 @media(max-width:480px){#lp-dialog{width:calc(100vw - 12px);max-height:calc(100dvh - 16px);border-radius:19px}#lp-dialog .lp-header{padding:19px 20px 16px}#lp-dialog .lp-body{padding:18px 16px}#lp-dialog .lp-tabs{padding:8px 12px 0;gap:2px}#lp-dialog h2{font-size:27px}#lp-dialog .lp-pet-grid{gap:8px}#lp-dialog .lp-card img{width:76px;height:76px}#lp-dialog .lp-tool{padding:14px 12px;gap:8px}#lp-dialog .lp-tool .lp-button{padding:8px 10px}}
 @media(prefers-reduced-motion:reduce){#lp-dialog .lp-card{transition:none}}
+/* Host settings entry: a full-width extension row, including narrow/mobile themes. */
+#lp-settings-container{display:block!important;box-sizing:border-box;width:100%!important;min-width:0;flex:0 0 100%;align-self:stretch}
+#lp-settings-entry{display:flex!important;align-items:center;justify-content:flex-start;box-sizing:border-box;width:100%!important;max-width:100%;min-width:0!important;min-height:44px;height:auto!important;padding:12px 14px;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word;writing-mode:horizontal-tb!important;text-align:left;font:inherit;line-height:1.5;color:inherit;cursor:pointer}
+#lp-dialog,#lp-quick,#lp-pets,#lp-toast{--lp-paper:var(--SmartThemeBlurTintColor,#242424);--lp-ink:var(--SmartThemeBodyColor,#f2f2f2);--lp-line:var(--SmartThemeBorderColor,#777);--lp-soft:var(--SmartThemeChatTintColor,#333);--lp-radius:12px;--lp-green:var(--lp-ink)}
+#lp-dialog[data-theme=mono],#lp-quick[data-theme=mono],#lp-pets[data-theme=mono],#lp-toast[data-theme=mono]{--lp-paper:#fff;--lp-ink:#202020;--lp-line:#222;--lp-soft:#f1f1f1;--lp-radius:0px}
+#lp-dialog[data-theme=pink],#lp-quick[data-theme=pink],#lp-pets[data-theme=pink],#lp-toast[data-theme=pink]{--lp-paper:#fffafd;--lp-ink:#704253;--lp-line:#e9b8ca;--lp-soft:#ffeaf2;--lp-radius:20px}
+#lp-dialog,#lp-quick,#lp-toast{background:var(--lp-paper);color:var(--lp-ink);border:1px solid var(--lp-line);border-radius:var(--lp-radius)}
+#lp-dialog :is(.lp-header,.lp-card,.lp-tool,.lp-diary,.lp-action-bar,.lp-button,.lp-close,input,select,textarea){background:var(--lp-paper);color:var(--lp-ink);border-color:var(--lp-line);border-radius:var(--lp-radius)}
+#lp-dialog :is(.lp-header,.lp-card[aria-pressed=true],.lp-badge){background:var(--lp-soft);color:var(--lp-ink)}
+#lp-dialog :is(.lp-header p,.lp-eyebrow,.lp-kicker,.lp-hint,.lp-welcome p,.lp-card-state,.lp-footer,.lp-history,.lp-tabs button,.lp-tool p){color:var(--lp-ink);opacity:.8}
+#lp-dialog .lp-tabs button[aria-selected=true]{color:var(--lp-ink);border-color:var(--lp-ink);opacity:1}
+#lp-dialog textarea{width:100%;resize:vertical;min-height:110px;box-sizing:border-box;font:13px/1.5 monospace;padding:10px}
+#lp-pets .lp-bubble{background:var(--lp-paper);color:var(--lp-ink);border-color:var(--lp-line);border-radius:var(--lp-radius)}
+#lp-quick{position:fixed;z-index:2147482100;display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(290px,calc(100vw - 12px));max-height:calc(100dvh - 16px);box-sizing:border-box;overflow:auto;padding:12px;box-shadow:0 8px 30px #0003;font:14px/1.5 system-ui;text-shadow:none}
+#lp-quick[hidden]{display:none!important}
+#lp-quick strong{grid-column:1/-1;font-size:14px}
+#lp-quick button{min-width:0;min-height:42px;white-space:normal;padding:8px;border:1px solid var(--lp-line);border-radius:var(--lp-radius);color:var(--lp-ink);background:var(--lp-soft);font:inherit;cursor:pointer}
+#lp-pets .lp-pet[data-state="听音乐"]::after{content:'♫ ♪';position:absolute;right:5%;top:5%;font-size:22px;color:var(--lp-ink);text-shadow:0 0 3px var(--lp-paper);pointer-events:none;animation:lp-notes 1.4s ease-in-out infinite alternate}
+@keyframes lp-notes{to{transform:translateY(-10px) rotate(12deg);opacity:.4}}
+@media(prefers-reduced-motion:reduce){#lp-pets .lp-pet[data-state="听音乐"]::after{animation:none}}
+#lp-dialog .lp-button:hover,#lp-dialog .lp-card:hover{background:var(--lp-soft);border-color:var(--lp-ink)}
+#lp-dialog .lp-card[aria-pressed=true]{border-color:var(--lp-ink)}
+#lp-dialog :is(button,input,select,textarea):focus-visible{outline-color:var(--lp-ink)}
+#lp-dialog :is(input[type=checkbox],input[type=range]){accent-color:var(--lp-ink)}
+#lp-dialog .lp-tabs{overflow-x:auto}
+#lp-dialog .lp-tabs button{flex:1 0 65px}
+#lp-dialog .lp-costume-preview{display:block;width:140px;height:140px;object-fit:contain;margin:12px auto;background:repeating-conic-gradient(#ccc 0% 25%,#eee 0% 50%) 50%/16px 16px;border:1px solid var(--lp-line);image-rendering:auto}
+#lp-dialog .lp-field input[type=url],#lp-dialog .lp-field input[type=file],#lp-dialog .lp-field select{box-sizing:border-box;max-width:100%;width:100%;min-width:0}

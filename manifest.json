@@ -6,7 +6,7 @@
   "js": "index.js",
   "css": "style.css",
   "author": "梨梨 × Lumi",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "homePage": "https://github.com/pear-winter/li-pet-with-lumi",
   "minimum_client_version": "1.19.0"
 }
