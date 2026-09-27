@@ -45,3 +45,12 @@ SillyTavern 通过 `window.SillyTavern.getContext()` 访问 `extensionSettings`�
 `music.js` 识别 `.ll-player.is-playing` 和包含 `#song-sheet` 的琴房播放器 `.ct .mn[title="暂停"]`。四份用户正则都使用这一播放按钮状态；标准 audio/video 检查 paused、ended、muted、volume 与 readyState。不重写 Web Audio、不触碰网络层。跨域或 opaque-origin iframe 无法读取时忽略。听歌用跳舞素材与音符装饰；手动互动优先，之后继续听歌。新增素材来自 Lumi 桌面仓库，只取实际存在的基础动作，不随机使用剧情组合。
 
 0.3.1 删除日记记录与导出、一起做事分页；魔法门继续调用上述接口。`petNames` 仅用于显示，素材/组合/换装/行为始终按稳定角色键查找。
+
+
+## 0.3.3 主动动作与重力
+
+`actionMode` 为 once / timed / until-cancel；`actionSeconds` 默认 120。运行中的动作锁只放在实例中，不把 Infinity 写到扩展设置。主动动作统一经 requestAction / requestHug，生成、音乐和切换聊天尊重锁。取消入口清理锁与临时 Blob URL。
+
+`playback.js` 读取 GIF 的帧延迟，不读取循环扩展；用新 Blob URL 从第一帧开始播放，在 decode 成功后计时。读取限 8MB、10 秒；不支持的一轮图片有明确提示，按时间模式仍能使用静态图。异步结果检查实例和请求序号，避免移除伙伴或取消之后重新播放。
+
+重力根据可见 #send_form 与 #send_textarea 的上沿减去间距和宠物尺寸计算；每帧检查输入区域以响应文本框高度变化。手动动作锁不阻止物理下落，但下落／落地动画不会覆盖锁定的动作。组合保持在输入区域上方。

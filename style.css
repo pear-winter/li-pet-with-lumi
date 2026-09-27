@@ -83,10 +83,10 @@
 #lp-dialog .lp-tabs button{flex:1 0 65px}
 #lp-dialog .lp-costume-preview{display:block;width:140px;height:140px;object-fit:contain;margin:12px auto;background:repeating-conic-gradient(#ccc 0% 25%,#eee 0% 50%) 50%/16px 16px;border:1px solid var(--lp-line);image-rendering:auto}
 #lp-dialog .lp-field input[type=url],#lp-dialog .lp-field input[type=file],#lp-dialog .lp-field select{box-sizing:border-box;max-width:100%;width:100%;min-width:0}
-/* Match the host magic-wand rows: no extra button inset before the icon. */
-#extensionsMenu #lp-wand-entry{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:5px!important;padding:0!important;margin:0!important;width:100%;min-width:0;min-height:0;text-indent:0;line-height:inherit;box-sizing:border-box;white-space:normal}
-#extensionsMenu #lp-wand-entry>i{display:inline-flex!important;align-items:center;justify-content:center;flex:0 0 1.25em;width:1.25em!important;margin:0!important;padding:0!important;position:static!important;transform:none!important;line-height:1;text-indent:0}
-#extensionsMenu #lp-wand-entry>span{min-width:0;text-align:left}
+/* Native wand row, with a stable icon column and room for themed text. */
+#extensionsMenu #lp-wand-entry{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:.65em!important;padding:.45em .5em!important;margin:0!important;width:100%;max-width:100%;min-width:0;min-height:2.4em;height:auto;text-indent:0;box-sizing:border-box;white-space:normal;text-align:left;line-height:1.4;cursor:pointer}
+#extensionsMenu #lp-wand-entry>.extensionsMenuExtensionButton{display:inline-flex!important;align-items:center;justify-content:center;flex:0 0 1.25em;width:1.25em!important;min-width:1.25em;height:1.25em;margin:0!important;padding:0!important;position:static!important;transform:none!important;line-height:1;text-indent:0}
+#extensionsMenu #lp-wand-entry>span{flex:1;min-width:0;white-space:normal;overflow-wrap:anywhere;text-align:left;line-height:1.4}
 #lp-dialog .lp-card{position:relative}
 #lp-dialog .lp-card[aria-pressed=true]{background:var(--lp-ink);color:var(--lp-paper);border:2px solid var(--lp-ink)}
 #lp-dialog .lp-card[aria-pressed=true] .lp-card-state{color:var(--lp-paper);opacity:1;font-weight:700}
