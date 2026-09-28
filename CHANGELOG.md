@@ -1,3 +1,11 @@
+## 0.3.10 · 整套皮肤接口补全
+
+- 接入梨梨提供的新版 outfits.js 和 wardrobe-api.js；工作台可通过 listSkins / saveSkin / applySkin / deleteSkin / exportSkin / importSkin 操作整套皮肤。
+- 共用原 li-pet-outfits 数据库及 sets 表，保留 version 1 皮肤文件格式；导入按钮独占一行，隐藏原生文件框。
+- 上轮 wardrobe.js、追加样式和 index.js 接线已存在且内容一致，不重复添加。版本保持用户指定的 0.3.10。
+
+- 验证：21 项现有测试与语法检查通过；Chromium 原生 IndexedDB 检查旧格式 lumi 测试套装、共用列表、保存／应用／删除、图片导入导出、默认名称和导入按钮通过。未使用用户真实数据，未在实际酒馆／工作台环境联调。
+
 ## 0.3.10 · 工作台换装接口
 
 - 接入梨梨提供的 wardrobe-api.js，在公开实例暴露 wardrobe.get / setImage / reset / setSize；与桌宠共用设置和本地图片仓库，支持组合动作与 48–360px 独立大小。

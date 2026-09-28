@@ -1,10 +1,12 @@
 import { CATALOG } from './catalog.js';
 import { PETS, petLabel } from './core.js';
 import { costumeActionsFor, validSource } from './customization.js';
+import { listOutfits, saveOutfit, applySavedOutfit, deleteOutfit, exportOutfit, applyOutfit } from './outfits.js';
 
 // 0.3.10：给梨梨工作台「换装 / 动作大小」用的接口。和面板里的换装页共用同一份设置、同一个本地图片仓库。
 // 大小单位是像素；size 为 null 表示跟随伙伴大小，base 是此时实际使用的大小。
 export function createWardrobeApi({ settings, save, costumes, refresh }) {
+  const ctx = () => ({ settings: settings(), costumes, save, refresh });
   const comboNames = key => key.replace(/_2$/, '').split('-');
   const comboLabel = (st, key) => comboNames(key).map(n => petLabel(st, n)).join('、') + ' · ' + (key.endsWith('_2') ? '叠叠乐' : comboNames(key).includes('灰鸮g老师') ? '一起看书' : '贴贴');
   const actionsOf = name => name === '组合' ? CATALOG.combos : PETS.includes(name) ? costumeActionsFor(name) : null;
@@ -53,6 +55,13 @@ export function createWardrobeApi({ settings, save, costumes, refresh }) {
         (st.actionSizes[name] ??= {})[action] = Math.max(48, Math.min(360, v));
       }
       save(); await refresh();
-    }
+    },
+    // 整套皮肤：和面板「整套皮肤」共用同一个本地套装库（li-pet-outfits）
+    listSkins: () => listOutfits(),                      // -> [{ id, name }]
+    saveSkin: name => saveOutfit(settings(), costumes, name),
+    applySkin: id => applySavedOutfit(id, ctx()),
+    deleteSkin: id => deleteOutfit(id),
+    exportSkin: name => exportOutfit(settings(), costumes, name),
+    importSkin: file => applyOutfit(file, ctx())
   };
 }

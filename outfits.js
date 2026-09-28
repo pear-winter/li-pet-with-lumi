@@ -43,17 +43,28 @@ async function localOutfits(mode,operation){
   const db=await new Promise((resolve,reject)=>{const request=indexedDB.open('li-pet-outfits',1);request.onupgradeneeded=()=>request.result.createObjectStore('sets',{keyPath:'id'});request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
   try{return await new Promise((resolve,reject)=>{const tx=db.transaction('sets',mode),request=operation(tx.objectStore('sets'));let result;request.onsuccess=()=>result=request.result;tx.oncomplete=()=>resolve(result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}finally{db.close();}
 }
+// 0.3.10：本地套装的增删查，面板和梨梨工作台共用
+export async function listOutfits(){return ((await localOutfits('readonly',s=>s.getAll()))||[]).map(set=>({id:set.id,name:set.name}));}
+export async function saveOutfit(settings,costumes,name){const title=String(name||'').trim()||'我的皮肤',blob=await packOutfit(settings,costumes,title),id=crypto.randomUUID();await localOutfits('readwrite',s=>s.put({id,name:title,blob}));return {id,name:title};}
+export async function applySavedOutfit(id,ctx){const set=await localOutfits('readonly',s=>s.get(id));if(!set)throw Error('这套皮肤已经不在了。');await applyOutfit(set.blob,ctx);return set.name;}
+export async function deleteOutfit(id){await localOutfits('readwrite',s=>s.delete(id));}
+export async function exportOutfit(settings,costumes,name){const blob=await packOutfit(settings,costumes,name);return new File([blob],'li-pet-outfit.json',{type:'application/json'});}
+
 export function renderOutfits({page,settings,costumes,save,refresh,tell}){
-  const panel=document.createElement('details');panel.className='lp-outfits';panel.innerHTML='<summary>整套皮肤 · 保存 / 导入 / 导出</summary><label class="lp-field">皮肤套装名称<input aria-label="皮肤套装名称" maxlength="60" placeholder="我的新衣服"></label><div class="lp-row"></div><label class="lp-field">本地已存皮肤<select aria-label="本地已存皮肤"></select></label><div class="lp-row"></div><label class="lp-field">导入整套皮肤<input aria-label="导入整套皮肤" type="file" accept=".json,application/json"></label>';
+  const panel=document.createElement('details');panel.className='lp-outfits';
+  panel.innerHTML='<summary>整套皮肤 · 保存 / 导入 / 导出</summary><label class="lp-field">皮肤套装名称<input aria-label="皮肤套装名称" maxlength="60" placeholder="我的新衣服"></label><div class="lp-row"></div><label class="lp-field">本地已存皮肤<select aria-label="本地已存皮肤"></select></label><div class="lp-row"></div><div class="lp-row"></div><input aria-label="导入整套皮肤" type="file" accept=".json,application/json" hidden>';
   page.append(panel);const name=panel.querySelector('input'),select=panel.querySelector('select'),upload=panel.querySelector('input[type=file]'),rows=panel.querySelectorAll('.lp-row');
-  const list=async()=>{const previous=select.value,sets=await localOutfits('readonly',s=>s.getAll());select.replaceChildren();for(const set of sets){const option=document.createElement('option');option.value=set.id;option.textContent=set.name;select.append(option);}if(sets.some(s=>s.id===previous))select.value=previous;};
+  const list=async()=>{const previous=select.value,sets=await listOutfits();select.replaceChildren();for(const set of sets){const option=document.createElement('option');option.value=set.id;option.textContent=set.name;select.append(option);}if(sets.some(s=>s.id===previous))select.value=previous;};
   let busy=false;
   async function run(fn){if(busy)return;busy=true;for(const n of panel.querySelectorAll('button,input,select'))n.disabled=true;try{await fn();}catch(e){tell(e.message||'皮肤操作失败，请重试。');}finally{busy=false;for(const n of panel.querySelectorAll('button,input,select'))n.disabled=false;upload.value='';}}
-  const button=(row,text,fn)=>{const b=document.createElement('button');b.type='button';b.className='lp-button';b.textContent=text;b.onclick=()=>run(fn);row.append(b);};
-  button(rows[0],'保存整套到本地',async()=>{const title=name.value.trim()||'我的皮肤',blob=await packOutfit(settings,costumes,title);await localOutfits('readwrite',s=>s.put({id:crypto.randomUUID(),name:title,blob}));await list();tell('整套皮肤已保存到本地。');});
-  button(rows[0],'导出当前整套',async()=>{const blob=await packOutfit(settings,costumes,name.value),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='li-pet-outfit.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);tell('整套皮肤已导出，图片已包含在文件中。');});
-  button(rows[1],'应用所选套装',async()=>{if(!select.value){tell('请先保存一套皮肤。');return;}const set=await localOutfits('readonly',s=>s.get(select.value));await applyOutfit(set.blob,{settings,costumes,save,refresh});tell('已应用 '+set.name);});
-  button(rows[1],'删除所选套装',async()=>{if(!select.value)return;await localOutfits('readwrite',s=>s.delete(select.value));await list();tell('已删除本地套装，当前换装保留。');});
-  upload.onchange=()=>{const file=upload.files[0];if(file)run(async()=>{const title=await applyOutfit(file,{settings,costumes,save,refresh});name.value=title;tell('已导入 '+title+'，可继续保存整套到本地。');});};
+  const button=(row,text,fn,raw=false)=>{const b=document.createElement('button');b.type='button';b.className='lp-button';b.textContent=text;b.onclick=raw?fn:()=>run(fn);row.append(b);};
+  const ctx={settings,costumes,save,refresh};
+  button(rows[0],'保存整套到本地',async()=>{await saveOutfit(settings,costumes,name.value);await list();tell('整套皮肤已保存到本地。');});
+  button(rows[0],'导出当前整套',async()=>{const file=await exportOutfit(settings,costumes,name.value),url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);tell('整套皮肤已导出。');});
+  button(rows[1],'应用所选套装',async()=>{if(!select.value){tell('请先保存一套皮肤。');return;}const title=await applySavedOutfit(select.value,ctx);tell('已应用 '+title);});
+  button(rows[1],'删除所选套装',async()=>{if(!select.value)return;await deleteOutfit(select.value);await list();tell('已删除本地套装，当前换装保留。');});
+  // 0.3.10：导入改成和其他按钮一样的按钮
+  button(rows[2],'导入整套皮肤',()=>upload.click(),true);
+  upload.onchange=()=>{const file=upload.files[0];if(file)run(async()=>{const title=await applyOutfit(file,ctx);name.value=title;tell('已导入 '+title);});};
   list().catch(()=>tell('本地套装暂时无法读取。'));
 }
