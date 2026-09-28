@@ -1,3 +1,4 @@
+import { createWardrobeApi } from './wardrobe-api.js';
 import { createCostumeStore, behaviorAction, actionsFor, skinSource } from './customization.js';
 import { renderWardrobe } from './wardrobe.js';
 import { CATALOG } from './catalog.js';
@@ -90,7 +91,7 @@ export function boot(){
   for(const [id,label] of [['home','小小伙伴'],['settings','小设置'],['wardrobe','换装动作']]){
     const b=button(label,()=>showTab(id));b.dataset.tab=id;nav.append(b);const p=el('section','lp-page');p.hidden=true;pages.set(id,p);body.append(p);
   }
-  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.9');dialog.append(head,nav,body,foot);
+  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.10');dialog.append(head,nav,body,foot);
   function showTab(id){if(!pages.has(id))id='home';tab=id;for(const[k,p]of pages)p.hidden=k!==id;for(const b of nav.children)b.setAttribute('aria-selected',String(b.dataset.tab===id));if(id==='wardrobe')renderWardrobe({page:pages.get(id),settings,save,costumes,resolveImage,refresh:refreshCostumes,tell,selected});}
   function open(id='home',opener=null){hideMenu();lastOpener=opener||document.activeElement;renderHome();renderSettings();showTab(id);if(!dialog.open)dialog.showModal();panelOpen=true;close.focus();}
   on(dialog,'close',()=>{panelOpen=false;lastOpener?.isConnected&&lastOpener.focus?.();});
@@ -238,8 +239,8 @@ export function boot(){
     save();renderHome();renderSettings();return true;
   }
   const api={
-    open,dispose,version:'0.3.9',
-    getState(){return{version:'0.3.9',enabled:settings.enabled,user:settings.name,
+    open,dispose,version:'0.3.10',
+    getState(){return{version:'0.3.10',enabled:settings.enabled,user:settings.name,
       settings:{name:settings.name,size:settings.size,speed:settings.speed,wander:settings.wander,bubbles:settings.bubbles,react:settings.react,music:settings.music,gravity:settings.gravity,playful:settings.playful,actionMode:settings.actionMode,actionSeconds:settings.actionSeconds,theme:settings.theme},
       musicPlaying,
       pets:PETS.map(name=>{const p=pets.get(name);return{id:name,name:label(name),original:name,size:sizeOf(name),on:settings.pets.includes(name),visible:!!p&&!p.node.hidden&&settings.enabled,action:p?.action||'',busy:!!p&&locked(p),actions:[...(CATALOG.pets[name]||[])],costumes:Object.keys(settings.skins?.[name]||{})};})};},
@@ -263,6 +264,7 @@ export function boot(){
     on(type,fn){if(type==='change'&&typeof fn==='function')listeners.add(fn);},
     off(type,fn){listeners.delete(fn);}
   };
+  api.wardrobe=createWardrobeApi({settings:()=>settings,save,costumes,refresh:refreshCostumes});
   window[OWNER]=api;layer.style.visibility='hidden';refreshCostumes().finally(()=>{if(!disposed)layer.style.visibility='';});
 }
 

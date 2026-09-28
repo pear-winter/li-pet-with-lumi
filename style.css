@@ -113,3 +113,8 @@
 
 #lp-dialog .lp-outfits{border:1px solid var(--lp-line);border-radius:var(--lp-radius);padding:12px;margin-bottom:16px}
 #lp-dialog .lp-outfits summary{cursor:pointer;margin-bottom:10px}
+
+/* 0.3.10：系统自带的「选择文件」按钮改成和面板按钮一样（整套皮肤导入等处） */
+#lp-dialog input[type=file]{padding:0;border:0;background:none;color:var(--lp-ink);font:inherit;font-size:12px;max-width:100%}
+#lp-dialog input[type=file]::file-selector-button{margin-right:10px;padding:8px 13px;min-height:38px;border:1px solid var(--lp-line);border-radius:var(--lp-radius);background:var(--lp-paper);color:var(--lp-ink);font:inherit;font-size:13px;cursor:pointer}
+#lp-dialog input[type=file]::file-selector-button:hover{background:var(--lp-soft)}
