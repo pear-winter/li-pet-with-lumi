@@ -14,11 +14,16 @@ export function renderWardrobe({page,settings,save,costumes,resolveImage,refresh
   const action=select('替换动作',[]),preview=el('img');preview.className='lp-costume-preview';preview.alt='动作预览';preview.referrerPolicy='no-referrer';page.append(preview);
   const field=el('label','图片链接');field.className='lp-field';const url=el('input');url.type='url';url.placeholder='https://…';field.append(url);page.append(field);
   const status=el('p');status.setAttribute('role','status');status.className='lp-hint';page.append(status);
+  const sizeField=el('label','当前动作大小');sizeField.className='lp-field';const size=el('input');size.type='range';size.min=48;size.max=360;size.setAttribute('aria-label','当前动作大小');const sizeText=el('span');sizeField.append(size,sizeText);page.append(sizeField);
+  const inheritedSize=()=>target()==='组合'?Math.max(...comboNames(action.value).map(n=>settings.petSizes[n]??settings.size)):settings.actionSizes[who.value]?.['通用皮肤']??settings.petSizes[who.value]??settings.size;
+  function syncSize(){const saved=settings.actionSizes[target()]?.[action.value],value=saved??inheritedSize();size.value=value;sizeText.textContent=`${value}px${saved===undefined?' · 跟随伙伴大小':''}`;preview.style.width=Math.min(value,360)+'px';preview.style.height='auto';preview.style.maxWidth='100%';}
+  size.oninput=()=>{(settings.actionSizes[target()]??={})[action.value]=Number(size.value);syncSize();save();refresh();};
+  page.append(btn('此动作恢复跟随大小',()=>{if(settings.actionSizes[target()])delete settings.actionSizes[target()][action.value];syncSize();save();refresh();}));
   let revision=0;
   const target=()=>CATALOG.combos.includes(action.value)?'组合':who.value;
   const comboNames=key=>key.replace(/_2$/,'').split('-');
   const comboLabel=key=>{const names=comboNames(key),others=names.filter(n=>n!==who.value).map(n=>petLabel(settings,n));return (who.value==='组合'?names.map(n=>petLabel(settings,n)).join('、'):'与 '+others.join('、'))+' · '+(key.endsWith('_2')?'叠叠乐':names.includes('灰鸮g老师')?'一起看书':'贴贴');};
-  async function previewCurrent(){const rev=++revision,source=settings.skins[target()]?.[action.value];url.value=source?.startsWith('local:')?'':source||'';status.textContent=source?.startsWith('local:')?'已使用本地图片':source?'已使用链接图片':'未单独换图，优先使用通用皮肤、主页展示图或待机换图';if(target()==='组合')status.textContent+=' · 这张互动图由参与伙伴共用，与组合换装同步。';const image=await resolveImage(target(),action.value);if(rev===revision&&page.isConnected)preview.src=image;}
+  async function previewCurrent(){syncSize();const rev=++revision,source=settings.skins[target()]?.[action.value];url.value=source?.startsWith('local:')?'':source||'';status.textContent=source?.startsWith('local:')?'已使用本地图片':source?'已使用链接图片':'未单独换图，优先使用通用皮肤、主页展示图或待机换图';if(target()==='组合')status.textContent+=' · 这张互动图由参与伙伴共用，与组合换装同步。';const image=await resolveImage(target(),action.value);if(rev===revision&&page.isConnected)preview.src=image;}
   preview.onerror=()=>{status.textContent='图片加载失败，请检查链接或重新上传；桌宠会回退到默认素材。';};
   function listActions(){
     action.replaceChildren();

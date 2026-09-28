@@ -16,7 +16,7 @@ export async function packOutfit(settings,costumes,name){
     }
     (images[pet]??={})[action]=cache.get(source);
   }
-  const bundle={format:'li-pet-outfit',version:1,name:String(name||'我的皮肤').slice(0,60),images,showcase:{...settings.showcase}};
+  const bundle={format:'li-pet-outfit',version:1,name:String(name||'我的皮肤').slice(0,60),images,showcase:{...settings.showcase},actionSizes:settings.actionSizes};
   const blob=new Blob([JSON.stringify(bundle)],{type:'application/json'});if(blob.size>LIMIT)throw Error('整套文件超过 128MB，请缩小图片后重试。');return blob;
 }
 export async function applyOutfit(blob,{settings,costumes,save,refresh}){
@@ -37,14 +37,14 @@ export async function applyOutfit(blob,{settings,costumes,save,refresh}){
   }catch(error){await Promise.allSettled(created.map(source=>costumes.remove(source)));throw error;}
   const showcase={};for(const name of Object.keys(CATALOG.pets))if(actionsFor(name).includes(bundle.showcase?.[name]))showcase[name]=bundle.showcase[name];
   const oldSources=[...new Set(Object.values(settings.skins).flatMap(actions=>Object.values(actions)))];
-  settings.skins=normalizeCustomization({skins}).skins;settings.showcase=showcase;save();await refresh();await Promise.allSettled(oldSources.map(source=>costumes.remove(source)));return bundle.name||'我的皮肤';
+  settings.actionSizes=normalizeCustomization({actionSizes:bundle.actionSizes}).actionSizes;settings.skins=normalizeCustomization({skins}).skins;settings.showcase=showcase;save();await refresh();await Promise.allSettled(oldSources.map(source=>costumes.remove(source)));return bundle.name||'我的皮肤';
 }
 async function localOutfits(mode,operation){
   const db=await new Promise((resolve,reject)=>{const request=indexedDB.open('li-pet-outfits',1);request.onupgradeneeded=()=>request.result.createObjectStore('sets',{keyPath:'id'});request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
   try{return await new Promise((resolve,reject)=>{const tx=db.transaction('sets',mode),request=operation(tx.objectStore('sets'));let result;request.onsuccess=()=>result=request.result;tx.oncomplete=()=>resolve(result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}finally{db.close();}
 }
 export function renderOutfits({page,settings,costumes,save,refresh,tell}){
-  const panel=document.createElement('details');panel.className='lp-outfits';panel.innerHTML='<summary>整套皮肤 · 保存 / 导入 / 导出</summary><label class="lp-field">皮肤套装名称<input aria-label="皮肤套装名称" maxlength="60" placeholder="我的新衣服"></label><div class="lp-row"></div><label class="lp-field">本地已存皮肤<select aria-label="本地已存皮肤"></select></label><div class="lp-row"></div><label class="lp-field">导入整套皮肤<input aria-label="导入整套皮肤" type="file" accept=".json,application/json"></label><p class="lp-hint">保存已替换的单宠、互动图片和主页展示动作。应用或导入会替换当前整套换装；未替换的动作使用内置素材。套装保存在当前浏览器，导出文件可带到其他设备。</p>';
+  const panel=document.createElement('details');panel.className='lp-outfits';panel.innerHTML='<summary>整套皮肤 · 保存 / 导入 / 导出</summary><label class="lp-field">皮肤套装名称<input aria-label="皮肤套装名称" maxlength="60" placeholder="我的新衣服"></label><div class="lp-row"></div><label class="lp-field">本地已存皮肤<select aria-label="本地已存皮肤"></select></label><div class="lp-row"></div><label class="lp-field">导入整套皮肤<input aria-label="导入整套皮肤" type="file" accept=".json,application/json"></label><p class="lp-hint">保存已替换的单宠、互动图片、动作大小和主页展示动作。应用或导入会替换当前整套换装；未替换的动作使用内置素材。套装保存在当前浏览器，导出文件可带到其他设备。</p>';
   page.append(panel);const name=panel.querySelector('input'),select=panel.querySelector('select'),upload=panel.querySelector('input[type=file]'),rows=panel.querySelectorAll('.lp-row');
   const list=async()=>{const previous=select.value,sets=await localOutfits('readonly',s=>s.getAll());select.replaceChildren();for(const set of sets){const option=document.createElement('option');option.value=set.id;option.textContent=set.name;select.append(option);}if(sets.some(s=>s.id===previous))select.value=previous;};
   let busy=false;

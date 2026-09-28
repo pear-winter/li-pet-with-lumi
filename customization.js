@@ -17,14 +17,14 @@ export function validSource(value){
   try{const u=new URL(value);return ['http:','https:'].includes(u.protocol)&&!u.username&&!u.password?u.href:'';}catch{return '';}
 }
 export function normalizeCustomization(v){
-  const skins={},behaviorMap={};
+  const skins={},behaviorMap={},actionSizes={};
   for(const name of [...Object.keys(CATALOG.pets),'组合']){
     const actions=name==='组合'?CATALOG.combos:costumeActionsFor(name);const source=v.skins?.[name]|| (name==='千千哥哥'?v.skins?.['哥哥狗狗']:null);
-    for(const action of actions){const url=validSource(source?.[action]);if(url)(skins[name]??={})[action]=url;}
+    for(const action of actions){const size=v.actionSizes?.[name]?.[action];if(Number.isFinite(size))(actionSizes[name]??={})[action]=Math.max(48,Math.min(360,size));const url=validSource(source?.[action]);if(url)(skins[name]??={})[action]=url;}
     if(name==='组合')continue;
     for(const event of Object.keys(BEHAVIORS)){const a=v.behaviorMap?.[name]?.[event];if(a==='__none__'||actionsFor(name).includes(a))(behaviorMap[name]??={})[event]=a;}
   }
-  return {skins,behaviorMap};
+  return {skins,behaviorMap,actionSizes};
 }
 export function behaviorAction(settings,name,event){
   const saved=settings.behaviorMap?.[name]?.[event];
