@@ -25,7 +25,7 @@ export function boot(){
   const label=name=>petLabel(settings,name);
   const mapped=(p,event)=>behaviorAction(settings,p.name,event);
   const imageFor=(name,action)=>skinUrls.get(settings.skins[name]?.[action])||(name==='组合'?comboAsset(action):petAsset(name,action));
-  async function refreshCostumes(){const rev=++costumeRevision;for(const group of Object.values(settings.skins))for(const source of Object.values(group)){try{const url=await costumes.load(source);if(url)skinUrls.set(source,url);}catch{}}if(disposed||rev!==costumeRevision)return;for(const p of pets.values()){const action=p.action;p.action='';showAction(p,action);}if(group)group.node.querySelector('img').src=imageFor('组合',group.key);}
+  async function refreshCostumes(){const rev=++costumeRevision;for(const group of Object.values(settings.skins))for(const source of Object.values(group)){try{const url=await costumes.load(source);if(url)skinUrls.set(source,url);}catch{}}if(disposed||rev!==costumeRevision)return;for(const p of pets.values()){const action=p.action;p.action='';showAction(p,action);}if(group)group.node.querySelector('img').src=imageFor('组合',group.key);renderHome();}
   const resolveImage=async(name,action)=>{const source=settings.skins[name]?.[action];try{return source?(await costumes.load(source)||imageFor(name,action)):imageFor(name,action);}catch{return imageFor(name,action);}};
   const listeners=new Set();let notifyTimer=0;
   // 0.3.5：对外通知（工作台桌宠页用）。合并 150ms 内的多次变化，避免频繁刷新。
@@ -89,8 +89,8 @@ export function boot(){
   for(const [id,label] of [['home','小小伙伴'],['settings','小设置'],['wardrobe','换装动作']]){
     const b=button(label,()=>showTab(id));b.dataset.tab=id;nav.append(b);const p=el('section','lp-page');p.hidden=true;pages.set(id,p);body.append(p);
   }
-  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.5');dialog.append(head,nav,body,foot);
-  function showTab(id){if(!pages.has(id))id='home';tab=id;for(const[k,p]of pages)p.hidden=k!==id;for(const b of nav.children)b.setAttribute('aria-selected',String(b.dataset.tab===id));if(id==='wardrobe')renderWardrobe({page:pages.get(id),settings,save,costumes,resolveImage,refresh:refreshCostumes,tell});}
+  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.6');dialog.append(head,nav,body,foot);
+  function showTab(id){if(!pages.has(id))id='home';tab=id;for(const[k,p]of pages)p.hidden=k!==id;for(const b of nav.children)b.setAttribute('aria-selected',String(b.dataset.tab===id));if(id==='wardrobe')renderWardrobe({page:pages.get(id),settings,save,costumes,resolveImage,refresh:refreshCostumes,tell,selected});}
   function open(id='home',opener=null){hideMenu();lastOpener=opener||document.activeElement;renderHome();renderSettings();showTab(id);if(!dialog.open)dialog.showModal();panelOpen=true;close.focus();}
   on(dialog,'close',()=>{panelOpen=false;lastOpener?.isConnected&&lastOpener.focus?.();});
   on(dialog,'click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
@@ -149,7 +149,7 @@ export function boot(){
   function renderHome(){const page=pages.get('home');page.replaceChildren();
     const welcome=el('div','lp-welcome');welcome.append(el('span','lp-kicker','一间有你的小酒馆'),el('h3','','今天，想让谁陪你？'),el('p','','点一下喂食、摸摸或打开魔法门，拖到喜欢的位置。魔法棒里随时能找到我们。'));page.append(welcome);
     const grid=el('div','lp-pet-grid');
-    for(const name of PETS){const card=button('',()=>{const has=settings.pets.includes(name);settings.pets=has?settings.pets.filter(n=>n!==name):[...settings.pets,name];if(!has)selected=name;save();buildPets();renderHome();},'lp-card');const img=el('img');img.src=imageFor(name,'待机');img.alt='';card.setAttribute('aria-pressed',String(settings.pets.includes(name)));card.append(img,el('strong','',label(name)),el('span','lp-card-state',settings.pets.includes(name)?'✓ 已选中':'＋ 未选中'));grid.append(card);}page.append(grid);
+    for(const name of settings.homeOrder){const item=el('div','lp-home-item');const card=button('',()=>{const has=settings.pets.includes(name);settings.pets=has?settings.pets.filter(n=>n!==name):[...settings.pets,name];if(!has)selected=name;save();buildPets();renderHome();},'lp-card');const img=el('img'),showcase=settings.showcase[name]||'待机';img.src=imageFor(name,showcase);img.onerror=()=>{const fallback=petAsset(name,showcase);if(img.src!==fallback)img.src=fallback;};img.alt='';card.dataset.pet=name;card.setAttribute('aria-pressed',String(settings.pets.includes(name)));card.append(img,el('strong','',label(name)),el('span','lp-card-state',settings.pets.includes(name)?'✓ 已选中':'＋ 未选中'));item.append(card);const order=el('div','lp-home-order');for(const[delta,text]of [[-1,'前移'],[1,'后移']]){const index=settings.homeOrder.indexOf(name),b=button(text,()=>{const next=index+delta;[settings.homeOrder[index],settings.homeOrder[next]]=[settings.homeOrder[next],settings.homeOrder[index]];save();renderHome();for(const n of page.querySelectorAll('.lp-home-order button'))if(n.getAttribute('aria-label')===label(name)+text&&!n.disabled){n.focus();break;}});b.setAttribute('aria-label',label(name)+text);b.disabled=index+delta<0||index+delta>=settings.homeOrder.length;order.append(b);}item.append(order);grid.append(item);}page.append(grid);
     const bar=el('div','lp-action-bar'),select=el('select');select.setAttribute('aria-label','选择互动伙伴');for(const name of settings.pets){const o=el('option','',label(name));o.value=name;select.append(o);}if(!settings.pets.includes(selected))selected=settings.pets[0]||'';select.value=selected;select.onchange=()=>selected=select.value;bar.append(select);
     for(const[label,action]of [['摸摸',()=>pet(selected)],['喂食',()=>feed(selected)],['睡一会',()=>{const p=pets.get(selected);if(p)requestAction(p,mapped(p,'sleep')||'待机','做个甜甜的梦。');}],['叫醒',()=>{const p=pets.get(selected);if(p)requestAction(p,mapped(p,'wake')||'待机','我在呢。');}]]){const b=button(label,()=>{action();dialog.close();});b.disabled=!settings.pets.length;bar.append(b);}page.append(bar);
     const row=el('div','lp-row');row.append(button('♡ 一起贴贴',()=>hugAny()),button('叠叠乐',()=>hugAny(true)),button(settings.enabled?'暂时藏起来':'让伙伴出来',()=>{settings.enabled=!settings.enabled;save();layer.hidden=!settings.enabled;if(!settings.enabled)endCombo();renderHome();renderSettings();}));page.append(row);
@@ -228,8 +228,8 @@ export function boot(){
     save();renderHome();renderSettings();return true;
   }
   const api={
-    open,dispose,version:'0.3.5',
-    getState(){return{version:'0.3.5',enabled:settings.enabled,user:settings.name,
+    open,dispose,version:'0.3.6',
+    getState(){return{version:'0.3.6',enabled:settings.enabled,user:settings.name,
       settings:{name:settings.name,size:settings.size,speed:settings.speed,wander:settings.wander,bubbles:settings.bubbles,react:settings.react,music:settings.music,gravity:settings.gravity,playful:settings.playful,actionMode:settings.actionMode,actionSeconds:settings.actionSeconds,theme:settings.theme},
       musicPlaying,
       pets:PETS.map(name=>{const p=pets.get(name);return{id:name,name:label(name),original:name,on:settings.pets.includes(name),visible:!!p&&!p.node.hidden&&settings.enabled,action:p?.action||'',busy:!!p&&locked(p),actions:[...(CATALOG.pets[name]||[])],costumes:Object.keys(settings.skins?.[name]||{})};})};},

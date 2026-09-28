@@ -37,3 +37,10 @@ test('every bundled animation and combination exists locally',async()=>{
 test('old dog name and position migrate; focus is removed',()=>{const s=normalize({pets:['哥哥狗狗','千千哥哥'],positions:{'哥哥狗狗':{x:.4,y:.7}},focusEnd:9999999999999});assert.deepEqual(s.pets,['千千哥哥']);assert.deepEqual(s.positions['千千哥哥'],{x:.4,y:.7});assert.equal('focusEnd' in s,false);assert.equal(s.theme,'tavern');assert.equal(s.gravity,false);});
 
 test('custom names preserve stable pet identity and old diary is dropped',()=>{const s=normalize({petNames:{'梨梨兔兔':'  小梨  ','千千猫猫':'','bad':'none'},diary:[{day:'2026-09-28'}],firstDay:'2026-09-28'});assert.equal(petLabel(s,'梨梨兔兔'),'小梨');assert.equal(petLabel(s,'千千猫猫'),'千千猫猫');assert.deepEqual(s.pets,['梨梨兔兔','千千猫猫']);assert.equal('diary' in s,false);assert.equal('firstDay' in s,false);});
+
+test('home order and showcase normalize without changing combo identity',()=>{
+  assert.equal(normalize().homeOrder[0],'梨梨兔兔');
+  const s=normalize({homeOrder:['煤球猫猫','煤球猫猫','bad'],showcase:{'梨梨兔兔':'跳舞','千千猫猫':'bad'}});
+  assert.equal(s.homeOrder[0],'煤球猫猫');assert.equal(new Set(s.homeOrder).size,PETS.length);assert.equal(s.showcase['梨梨兔兔'],'跳舞');assert.equal(s.showcase['千千猫猫'],undefined);
+  assert.equal(comboFor(['梨梨兔兔','千千猫猫']),'千千猫猫-梨梨兔兔');
+});

@@ -36,7 +36,7 @@
 #lp-dialog button:focus-visible,#lp-dialog input:focus-visible,#lp-dialog select:focus-visible{outline:2px solid #7d956b;outline-offset:3px}
 #lp-dialog button:disabled{opacity:.45;cursor:default}
 #lp-dialog .lp-action-bar,#lp-dialog .lp-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
-#lp-dialog select,#lp-dialog input:not([type=checkbox]):not([type=range]){min-width:0;border:1px solid #ccd7bf;border-radius:9px;background:#fffef9;padding:8px 10px}
+#lp-dialog select,#lp-dialog input:not([type=checkbox]):not([type=range]){min-width:0;border:1px solid var(--lp-line);border-radius:var(--lp-radius);background:var(--lp-paper);color:var(--lp-ink);padding:8px 10px}
 #lp-dialog .lp-action-bar select{flex:1 1 110px}
 #lp-dialog .lp-tool{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:17px 18px;margin:12px 0;border:1px solid var(--lp-line);border-radius:14px;background:#fffefa}
 #lp-dialog .lp-tool>div{flex:1;min-width:0}
@@ -102,3 +102,12 @@
 #lp-quick .lp-quick-header strong{min-width:0;overflow-wrap:anywhere}
 #lp-quick .lp-quick-close{display:flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;min-width:36px;min-height:36px;height:36px;padding:0;line-height:1;font-size:24px;background:transparent;color:var(--lp-ink);border:0;box-shadow:none}
 #lp-quick .lp-quick-close:hover{background:var(--lp-soft)}
+
+#lp-dialog .lp-home-item{min-width:0;display:flex;flex-direction:column;gap:5px}
+#lp-dialog .lp-home-item .lp-card{width:100%;flex:1}
+#lp-dialog .lp-home-order{display:flex;gap:4px}
+#lp-dialog .lp-home-order .lp-button{flex:1;min-width:0;padding:5px 2px;font-size:11px}
+#lp-dialog .lp-home-order .lp-button:disabled{opacity:.35;cursor:default}
+
+#lp-dialog .lp-outfits{border:1px solid var(--lp-line);border-radius:var(--lp-radius);padding:12px;margin-bottom:16px}
+#lp-dialog .lp-outfits summary{cursor:pointer;margin-bottom:10px}
