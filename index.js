@@ -90,7 +90,7 @@ export function boot(){
   for(const [id,label] of [['home','小小伙伴'],['settings','小设置'],['wardrobe','换装动作']]){
     const b=button(label,()=>showTab(id));b.dataset.tab=id;nav.append(b);const p=el('section','lp-page');p.hidden=true;pages.set(id,p);body.append(p);
   }
-  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.8');dialog.append(head,nav,body,foot);
+  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.9');dialog.append(head,nav,body,foot);
   function showTab(id){if(!pages.has(id))id='home';tab=id;for(const[k,p]of pages)p.hidden=k!==id;for(const b of nav.children)b.setAttribute('aria-selected',String(b.dataset.tab===id));if(id==='wardrobe')renderWardrobe({page:pages.get(id),settings,save,costumes,resolveImage,refresh:refreshCostumes,tell,selected});}
   function open(id='home',opener=null){hideMenu();lastOpener=opener||document.activeElement;renderHome();renderSettings();showTab(id);if(!dialog.open)dialog.showModal();panelOpen=true;close.focus();}
   on(dialog,'close',()=>{panelOpen=false;lastOpener?.isConnected&&lastOpener.focus?.();});
@@ -99,7 +99,12 @@ export function boot(){
   const entry=el('div','list-group-item flex-container flexGap5');entry.setAttribute('role','button');entry.tabIndex=0;entry.addEventListener('click',()=>open('home',entry));entry.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open('home',entry);}});entry.id='lp-wand-entry';entry.title='梨间雪 · 酒馆桌宠';
   const icon=el('div','fa-solid fa-paw fa-fw extensionsMenuExtensionButton');icon.setAttribute('aria-hidden','true');entry.append(icon,el('span','','梨间雪 · 酒馆桌宠'));
   const settingsEntry=button('打开梨间雪 · 酒馆桌宠',()=>open('settings',settingsEntry),'menu_button');settingsEntry.id='lp-settings-entry';
-  const settingsContainer=el('div','extension_container');settingsContainer.id='lp-settings-container';settingsContainer.append(settingsEntry);
+  const settingsContainer=el('div','extension_container');settingsContainer.id='lp-settings-container';
+  const drawer=el('div','inline-drawer'),drawerHeader=el('div','inline-drawer-toggle inline-drawer-header');drawerHeader.id='lp-settings-header';drawerHeader.setAttribute('role','button');drawerHeader.tabIndex=0;drawerHeader.setAttribute('aria-expanded','false');drawerHeader.setAttribute('aria-controls','lp-settings-content');
+  const drawerIcon=el('div','inline-drawer-icon fa-solid fa-circle-chevron-down down');drawerIcon.setAttribute('aria-hidden','true');drawerHeader.append(el('b','','梨间雪 · 酒馆桌宠'),drawerIcon);
+  const drawerContent=el('div','inline-drawer-content');drawerContent.id='lp-settings-content';drawerContent.style.display='none';drawerContent.append(settingsEntry);drawer.append(drawerHeader,drawerContent);settingsContainer.append(drawer);
+  on(drawerHeader,'click',e=>{e.stopPropagation();const expanded=drawerHeader.getAttribute('aria-expanded')!=='true';drawerHeader.setAttribute('aria-expanded',String(expanded));drawerContent.style.display=expanded?'block':'none';drawerIcon.classList.toggle('down',!expanded);drawerIcon.classList.toggle('up',expanded);drawerIcon.classList.toggle('fa-circle-chevron-down',!expanded);drawerIcon.classList.toggle('fa-circle-chevron-up',expanded);});
+  on(drawerHeader,'keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();drawerHeader.click();}});
   function mountEntries(){const menu=document.getElementById('extensionsMenu');if(menu&&entry.parentElement!==menu)menu.append(entry);const area=document.querySelector('#extensions_settings2, #extensions_settings');if(area&&settingsContainer.parentElement!==area)area.append(settingsContainer);}
   mountEntries();
 
@@ -233,8 +238,8 @@ export function boot(){
     save();renderHome();renderSettings();return true;
   }
   const api={
-    open,dispose,version:'0.3.8',
-    getState(){return{version:'0.3.8',enabled:settings.enabled,user:settings.name,
+    open,dispose,version:'0.3.9',
+    getState(){return{version:'0.3.9',enabled:settings.enabled,user:settings.name,
       settings:{name:settings.name,size:settings.size,speed:settings.speed,wander:settings.wander,bubbles:settings.bubbles,react:settings.react,music:settings.music,gravity:settings.gravity,playful:settings.playful,actionMode:settings.actionMode,actionSeconds:settings.actionSeconds,theme:settings.theme},
       musicPlaying,
       pets:PETS.map(name=>{const p=pets.get(name);return{id:name,name:label(name),original:name,size:sizeOf(name),on:settings.pets.includes(name),visible:!!p&&!p.node.hidden&&settings.enabled,action:p?.action||'',busy:!!p&&locked(p),actions:[...(CATALOG.pets[name]||[])],costumes:Object.keys(settings.skins?.[name]||{})};})};},

@@ -52,3 +52,7 @@
 ## 0.3.8 验证
 
 19 项 Node 测试通过；`tests/action-sizes.integration.mjs` 在 1280×900 和 390×844 通过，覆盖不同动作独立尺寸、动作切换、恢复继承、组合实时缩放、整套导出/导入、刷新保留以及缩放后的重力落点。
+
+## 0.3.9 验证
+
+核对 SillyTavern 1.13.0 的 public/script.js（globalThis.SillyTavern.getContext）和 public/scripts/st-context.js（extensionSettings、saveSettingsDebounced、eventSource、eventTypes）。19 项 Node 测试通过；功能页折叠入口在桌面和手机模拟视口验证展开、收起、键盘操作及打开设置。未在用户电脑实际酒馆实例复现“Cannot enable extension”，降低先前过高的最低版本要求仅修复版本拦截这一种原因。

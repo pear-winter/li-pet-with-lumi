@@ -87,7 +87,7 @@ try{
   await page.waitForFunction(()=>[...document.querySelectorAll('.lp-pet')].every(n=>Math.abs(n.getBoundingClientRect().bottom-(document.getElementById('send_textarea').getBoundingClientRect().top-8))<2));
   await page.reload();await page.waitForSelector('.lp-pet');assert.equal(await page.locator('#lp-dialog').getAttribute('data-theme'),'pink');assert.ok((await page.locator('#lp-custom-style').textContent()).includes('--test-css: saved'));
   await page.evaluate(()=>{document.getElementById('extensions_settings2').style.cssText='display:flex;flex-direction:column;width:220px';});
-  const r=await page.locator('#lp-settings-entry').boundingBox();assert.ok(r.width>=200&&r.height<90);
+  await page.locator('#lp-settings-header').click();const r=await page.locator('#lp-settings-entry').boundingBox();assert.ok(r.width>0&&r.width<=220&&r.height<90);
   assert.equal(await page.getByText('开始 25 分钟',{exact:true}).count(),0);
   // Walk after more than a minute idle, and both default companions leave a hug to type.
   await page.evaluate(async()=>{window.__liPetWithLumi.dispose();Object.assign(testContext.extensionSettings.li_pet_with_lumi,{gravity:false,wander:true,speed:30,playful:false,pets:['梨梨兔兔','千千猫猫'],positions:{'梨梨兔兔':{x:.1,y:.6},'千千猫猫':{x:.9,y:.6}}});const {boot}=await import('/renamed-extension/index.js');boot();const original=Date.now;window.restoreClock=()=>Date.now=original;Date.now=()=>original()+65000;});

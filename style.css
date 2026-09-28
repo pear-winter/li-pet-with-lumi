@@ -56,8 +56,10 @@
 @media(max-width:480px){#lp-dialog{width:calc(100vw - 12px);max-height:calc(100dvh - 16px);border-radius:19px}#lp-dialog .lp-header{padding:19px 20px 16px}#lp-dialog .lp-body{padding:18px 16px}#lp-dialog .lp-tabs{padding:8px 12px 0;gap:2px}#lp-dialog h2{font-size:27px}#lp-dialog .lp-pet-grid{gap:8px}#lp-dialog .lp-card img{width:76px;height:76px}#lp-dialog .lp-tool{padding:14px 12px;gap:8px}#lp-dialog .lp-tool .lp-button{padding:8px 10px}}
 @media(prefers-reduced-motion:reduce){#lp-dialog .lp-card{transition:none}}
 /* Host settings entry: a full-width extension row, including narrow/mobile themes. */
-#lp-settings-container{display:block!important;box-sizing:border-box;width:100%!important;min-width:0;flex:0 0 100%;align-self:stretch}
-#lp-settings-entry{display:flex!important;align-items:center;justify-content:flex-start;box-sizing:border-box;width:100%!important;max-width:100%;min-width:0!important;min-height:44px;height:auto!important;padding:12px 14px;white-space:normal!important;word-break:normal!important;overflow-wrap:break-word;writing-mode:horizontal-tb!important;text-align:left;font:inherit;line-height:1.5;color:inherit;cursor:pointer}
+#lp-settings-container{box-sizing:border-box;min-width:0;width:100%}
+#lp-settings-header{cursor:pointer}
+#lp-settings-entry{box-sizing:border-box;max-width:100%;white-space:normal;word-break:normal;writing-mode:horizontal-tb;text-align:center}
+
 #lp-dialog,#lp-quick,#lp-pets,#lp-toast{--lp-paper:var(--SmartThemeBlurTintColor,#242424);--lp-ink:var(--SmartThemeBodyColor,#f2f2f2);--lp-line:var(--SmartThemeBorderColor,#777);--lp-soft:var(--SmartThemeChatTintColor,#333);--lp-radius:12px;--lp-green:var(--lp-ink)}
 #lp-dialog[data-theme=mono],#lp-quick[data-theme=mono],#lp-pets[data-theme=mono],#lp-toast[data-theme=mono]{--lp-paper:#fff;--lp-ink:#202020;--lp-line:#222;--lp-soft:#f1f1f1;--lp-radius:0px}
 #lp-dialog[data-theme=pink],#lp-quick[data-theme=pink],#lp-pets[data-theme=pink],#lp-toast[data-theme=pink]{--lp-paper:#fffafd;--lp-ink:#704253;--lp-line:#e9b8ca;--lp-soft:#ffeaf2;--lp-radius:20px}
