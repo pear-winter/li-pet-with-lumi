@@ -11,11 +11,12 @@ export function normalize(value = {}) {
   const pets = Array.isArray(v.pets) ? [...new Set(v.pets.map(p=>p==='哥哥狗狗'?'千千哥哥':p).filter(p=>PETS.includes(p)))] : [...DEFAULTS.pets];
   const homeOrder=[...new Set([...(Array.isArray(v.homeOrder)?v.homeOrder:[]),...HOME_ORDER])].filter(n=>PETS.includes(n));
   const showcase={};for(const name of PETS)if(actionsFor(name).includes(v.showcase?.[name]))showcase[name]=v.showcase[name];
+  const petSizes={};for(const name of PETS)if(Number.isFinite(v.petSizes?.[name]))petSizes[name]=clamp(v.petSizes[name],48,240);
   const positions={},petNames={};
   for(const name of PETS){const value=v.petNames?.[name];if(typeof value==='string'&&value.trim())petNames[name]=value.trim().slice(0,32);}
   const storedPositions={...v.positions};if(!storedPositions['千千哥哥']&&storedPositions['哥哥狗狗'])storedPositions['千千哥哥']=storedPositions['哥哥狗狗'];
   for (const p of PETS) if (storedPositions[p] && Number.isFinite(storedPositions[p].x) && Number.isFinite(storedPositions[p].y)) positions[p]={x:clamp(storedPositions[p].x,0,1),y:clamp(storedPositions[p].y,0,1)};
-  return {...DEFAULTS,...normalizeCustomization(v),actionMode:['once','timed','until-cancel'].includes(v.actionMode)?v.actionMode:'timed',actionSeconds:clamp(v.actionSeconds??120,1,86400),...Object.fromEntries(['enabled','wander','bubbles','react','gravity','music','playful'].map(k=>[k,typeof v[k]==='boolean'?v[k]:DEFAULTS[k]])),pets,size:clamp(v.size??100,64,160),speed:clamp(v.speed??18,0,40),name:typeof v.name==='string'?v.name.slice(0,24):'梨梨',positions,petNames,homeOrder,showcase,theme:['tavern','mono','pink'].includes(v.theme)?v.theme:'tavern',customCss:typeof v.customCss==='string'?v.customCss.slice(0,50000):''};
+  return {...DEFAULTS,...normalizeCustomization(v),actionMode:['once','timed','until-cancel'].includes(v.actionMode)?v.actionMode:'timed',actionSeconds:clamp(v.actionSeconds??120,1,86400),...Object.fromEntries(['enabled','wander','bubbles','react','gravity','music','playful'].map(k=>[k,typeof v[k]==='boolean'?v[k]:DEFAULTS[k]])),pets,size:clamp(v.size??100,64,160),speed:clamp(v.speed??18,0,40),name:typeof v.name==='string'?v.name.slice(0,24):'梨梨',positions,petNames,petSizes,homeOrder,showcase,theme:['tavern','mono','pink'].includes(v.theme)?v.theme:'tavern',customCss:typeof v.customCss==='string'?v.customCss.slice(0,50000):''};
 }
 export const petLabel=(settings,name)=>settings.petNames?.[name]||name;
 export function comboFor(names, stack=false) {

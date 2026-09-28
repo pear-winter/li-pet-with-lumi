@@ -9,6 +9,8 @@ export const BEHAVIORS = {
   fall:['下落','掉落'], land:['落地','摔趴趴'],
 };
 export const actionsFor=name=>[...new Set([...(CATALOG.pets[name]||[]),'听音乐','摸摸头'])];
+export const costumeActionsFor=name=>['通用皮肤',...actionsFor(name)];
+export function skinSource(settings,name,action){const skins=settings.skins[name]||{};if(name==='组合')return skins[action];return skins[action]||skins['通用皮肤']||skins[settings.showcase[name]||'待机']||skins['待机'];}
 export function validSource(value){
   if(typeof value!=='string'||value.length>4096)return '';
   if(/^local:[a-f0-9-]{36}$/i.test(value))return value;
@@ -17,10 +19,10 @@ export function validSource(value){
 export function normalizeCustomization(v){
   const skins={},behaviorMap={};
   for(const name of [...Object.keys(CATALOG.pets),'组合']){
-    const actions=name==='组合'?CATALOG.combos:actionsFor(name);const source=v.skins?.[name]|| (name==='千千哥哥'?v.skins?.['哥哥狗狗']:null);
+    const actions=name==='组合'?CATALOG.combos:costumeActionsFor(name);const source=v.skins?.[name]|| (name==='千千哥哥'?v.skins?.['哥哥狗狗']:null);
     for(const action of actions){const url=validSource(source?.[action]);if(url)(skins[name]??={})[action]=url;}
     if(name==='组合')continue;
-    for(const event of Object.keys(BEHAVIORS)){const a=v.behaviorMap?.[name]?.[event];if(a==='__none__'||actions.includes(a))(behaviorMap[name]??={})[event]=a;}
+    for(const event of Object.keys(BEHAVIORS)){const a=v.behaviorMap?.[name]?.[event];if(a==='__none__'||actionsFor(name).includes(a))(behaviorMap[name]??={})[event]=a;}
   }
   return {skins,behaviorMap};
 }

@@ -54,3 +54,7 @@ SillyTavern 通过 `window.SillyTavern.getContext()` 访问 `extensionSettings`�
 `playback.js` 读取 GIF 的帧延迟，不读取循环扩展；用新 Blob URL 从第一帧开始播放，在 decode 成功后计时。读取限 8MB、10 秒；不支持的一轮图片有明确提示，按时间模式仍能使用静态图。异步结果检查实例和请求序号，避免移除伙伴或取消之后重新播放。
 
 重力根据可见 #send_form 与 #send_textarea 的上沿减去间距和宠物尺寸计算；每帧检查输入区域以响应文本框高度变化。手动动作锁不阻止物理下落，但下落／落地动画不会覆盖锁定的动作。组合保持在输入区域上方。
+
+### 0.3.7 独立尺寸
+
+`window.__liPetWithLumi.setPetSize(name, pixels)` 设置单只伙伴大小（48–240px）；`getState().pets` 每项的 `size` 为实际配置尺寸。原 `setSetting('size', pixels)` 调整未覆盖伙伴的默认大小。

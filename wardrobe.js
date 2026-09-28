@@ -18,18 +18,22 @@ export function renderWardrobe({page,settings,save,costumes,resolveImage,refresh
   const target=()=>CATALOG.combos.includes(action.value)?'组合':who.value;
   const comboNames=key=>key.replace(/_2$/,'').split('-');
   const comboLabel=key=>{const names=comboNames(key),others=names.filter(n=>n!==who.value).map(n=>petLabel(settings,n));return (who.value==='组合'?names.map(n=>petLabel(settings,n)).join('、'):'与 '+others.join('、'))+' · '+(key.endsWith('_2')?'叠叠乐':names.includes('灰鸮g老师')?'一起看书':'贴贴');};
-  async function previewCurrent(){const rev=++revision,source=settings.skins[target()]?.[action.value];url.value=source?.startsWith('local:')?'':source||'';status.textContent=source?.startsWith('local:')?'已使用本地图片':source?'已使用链接图片':'使用默认素材';if(target()==='组合')status.textContent+=' · 这张互动图由参与伙伴共用，与组合换装同步。';const image=await resolveImage(target(),action.value);if(rev===revision&&page.isConnected)preview.src=image;}
+  async function previewCurrent(){const rev=++revision,source=settings.skins[target()]?.[action.value];url.value=source?.startsWith('local:')?'':source||'';status.textContent=source?.startsWith('local:')?'已使用本地图片':source?'已使用链接图片':'未单独换图，优先使用通用皮肤、主页展示图或待机换图';if(target()==='组合')status.textContent+=' · 这张互动图由参与伙伴共用，与组合换装同步。';const image=await resolveImage(target(),action.value);if(rev===revision&&page.isConnected)preview.src=image;}
   preview.onerror=()=>{status.textContent='图片加载失败，请检查链接或重新上传；桌宠会回退到默认素材。';};
   function listActions(){
     action.replaceChildren();
     const add=(parent,key,text)=>{const o=el('option',text);o.value=key;parent.append(o);};
     if(who.value==='组合')for(const key of CATALOG.combos)add(action,key,comboLabel(key));
     else{
-      const solo=el('optgroup');solo.label='单独动作';for(const key of actionsFor(who.value))add(solo,key,key);action.append(solo);
+      const automatic={'待机':'待机 / 点击后停留','掉落':'掉落 / 空中下落过程','摔趴趴':'摔趴趴 / 落地','开心蹦蹦':'开心蹦蹦 / 拖动松手、互动结束','向左看':'向左看 / 自动小动作','向右看':'向右看 / 自动小动作','打哈欠':'打哈欠 / 自动小动作'};
+      add(action,'通用皮肤','通用皮肤（未单独换图的动作）');
+      const solo=el('optgroup');solo.label='单独动作';for(const key of actionsFor(who.value))if(!automatic[key])add(solo,key,key);action.append(solo);
+      const extras=el('optgroup');extras.label='下落、点击与自动小动作';for(const key of actionsFor(who.value))if(automatic[key])add(extras,key,automatic[key]);action.append(extras);
       const interactions=el('optgroup');interactions.label='与其他伙伴互动';
       for(const key of CATALOG.combos)if(comboNames(key).includes(who.value))add(interactions,key,comboLabel(key));
       if(interactions.children.length)action.append(interactions);
     }
+    if(who.value!=='组合')action.value='待机';
     previewCurrent();
   }
   const showcase=select('主页展示动作',[]);

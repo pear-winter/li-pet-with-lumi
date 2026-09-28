@@ -1,4 +1,4 @@
-import { normalizeCustomization, actionsFor } from './customization.js';
+import { normalizeCustomization, actionsFor, costumeActionsFor } from './customization.js';
 import { CATALOG } from './catalog.js';
 const LIMIT=128*1024*1024;
 const MIME=new Set(['image/png','image/jpeg','image/gif','image/webp','image/avif']);
@@ -26,7 +26,7 @@ export async function applyOutfit(blob,{settings,costumes,save,refresh}){
   const skins={},created=[];let total=0;
   try{
     for(const[pet,actions]of Object.entries(bundle.images)){
-      const allowed=pet==='组合'?CATALOG.combos:Object.hasOwn(CATALOG.pets,pet)?actionsFor(pet):null;
+      const allowed=pet==='组合'?CATALOG.combos:Object.hasOwn(CATALOG.pets,pet)?costumeActionsFor(pet):null;
       if(!allowed||!actions||typeof actions!=='object'||Array.isArray(actions))throw Error('皮肤文件包含未知伙伴。');
       for(const[action,image]of Object.entries(actions)){
         if(!allowed.includes(action)||!image||!MIME.has(image.type)||typeof image.data!=='string'||image.data.length>12*1024*1024)throw Error('皮肤文件包含无效动作或图片。');
