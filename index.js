@@ -1,10 +1,11 @@
+import { HUMAN_COMBOS } from './builtins.js';
 import { createWardrobeApi } from './wardrobe-api.js';
 import { createCostumeStore, behaviorAction, actionsFor, skinSource, resolvePetAction } from './customization.js';
 import { renderWardrobe } from './wardrobe.js';
 import { CATALOG } from './catalog.js';
 import { actionDeadline, loadCycle } from './playback.js';
 import { isMusicPlaying } from './music.js';
-import { PETS, normalize, clamp, petLabel, comboFor, comboNames, comboKind, combosFor, chooseState, petAsset, comboAsset } from './core.js';
+import { PETS, normalize, clamp, petLabel, comboFor, nearbyCombos, comboNames, comboKind, combosFor, chooseState, petAsset, comboAsset } from './core.js';
 import { openTool, readActivity, WORKBENCH_PAGES } from './adapters.js';
 
 const KEY='li_pet_with_lumi';
@@ -19,7 +20,7 @@ export function boot(){
   window[OWNER]?.dispose();
   let settings=normalize(ctx.extensionSettings[KEY]);
   let disposed=false,frame=0,lastFrame=0,chatBusy=false,chatStarted=0,typingUntil=0,musicPlaying=false;
-  let selected=settings.pets[0]||PETS[1],tab='home',lastOpener=null,panelOpen=false,group=null,comboCooldown=0;
+  let selected=settings.pets[0]||PETS[1],tab='home',lastOpener=null,panelOpen=false,group=null,comboCooldown=0,nextComboCheck=0,lastAutoCombo='';
   let lastToolActivity={atelier:false,meow:false,reading:false};
   const pets=new Map(),cleanups=[],timers=new Set(),costumes=createCostumeStore(),skinUrls=new Map();
   let costumeRevision=0;
@@ -143,9 +144,9 @@ export function boot(){
   function pet(name){const p=pets.get(name);if(!p)return;requestAction(p,mapped(p,'pet')||'待机',`${settings.name||'你'}，再摸一下嘛 ♡`);}
   function feed(name){const p=pets.get(name);if(!p)return;requestAction(p,mapped(p,'feed')||'待机','今天也被好好照顾啦。');}
   const locked=p=>p.lockUntil>Date.now()||(group?.lockUntil>Date.now()&&group.names.includes(p.name));
-  function endCombo(force=true){if(!group||(!force&&group.lockUntil>Date.now()))return;const current=group;group=null;current.node.remove();if(current.playbackURL)URL.revokeObjectURL(current.playbackURL);current.names.forEach((name,i)=>{const p=pets.get(name);if(p){p.node.hidden=false;p.manual='开心蹦蹦';p.until=Date.now()+1800;p.x+=(i?1:-1)*sizeOf(p.name)*.4;place(p);p.lastTouch=Date.now();}});comboCooldown=Date.now()+18000;}
+  function endCombo(force=true){if(!group||(!force&&group.lockUntil>Date.now()))return;const current=group;group=null;current.node.remove();if(current.playbackURL)URL.revokeObjectURL(current.playbackURL);current.names.forEach((name,i)=>{const p=pets.get(name);if(p){p.node.hidden=false;p.manual='开心蹦蹦';p.until=Date.now()+1800;p.x+=(i?1:-1)*sizeOf(p.name)*.4;place(p);p.lastTouch=Date.now();}});comboCooldown=Date.now()+6000;}
   function resizeCombo(){if(!group)return;const v=viewport(),r=group.node.getBoundingClientRect(),size=settings.actionSizes['组合']?.[group.key]??Math.max(...group.names.map(n=>sizeOf(n))),width=Math.min(v.width-12,size*1.9),height=Math.min(v.height-8,size*1.5);group.node.style.width=width+'px';group.node.style.height=height+'px';group.node.style.left=clamp(r.left,v.left+4,v.left+v.width-width-4)+'px';group.node.style.top=clamp(r.bottom-height,v.top+4,settings.gravity?groundTop(height):v.top+v.height-height-4)+'px';}
-  function hug(names,stack=false,ms=7500,explicit=false,cycle=null,chosenKey=null){const key=explicit&&chosenKey?chosenKey:comboFor(names,stack);if(!key||!CATALOG.combos.includes(key))return false;const participants=names.map(n=>pets.get(n));if(participants.some(p=>!p||(!explicit&&locked(p))))return false;if(!explicit&&group?.lockUntil>Date.now())return false;endCombo();participants.forEach(p=>{clearPlayback(p);p.lockUntil=0;p.manual='';});
+  function hug(names,stack=false,ms=7500,explicit=false,cycle=null,chosenKey=null){const key=chosenKey||comboFor(names,stack);if(!key||!CATALOG.combos.includes(key))return false;const participants=names.map(n=>pets.get(n));if(participants.some(p=>!p||(!explicit&&locked(p))))return false;if(!explicit&&group?.lockUntil>Date.now())return false;endCombo();participants.forEach(p=>{clearPlayback(p);p.lockUntil=0;p.manual='';});
     const v=viewport(),size=settings.actionSizes['组合']?.[key]??Math.max(...participants.map(p=>sizeOf(p.name))),width=Math.min(v.width-12,size*1.9),height=Math.min(v.height-8,size*1.5);
     const node=button('',endCombo,'lp-combo');node.setAttribute('aria-label',comboKind(key)+'，点击散开');node.dataset.combo=key;
     const img=el('img');img.src=cycle?.url||imageFor('组合',key);img.referrerPolicy='no-referrer';img.onerror=()=>{if(img.src!==comboAsset(key))img.src=comboAsset(key);};img.alt=names.map(label).join('和')+' · '+comboKind(key);node.append(img);
@@ -153,6 +154,21 @@ export function boot(){
     layer.append(node);participants.forEach(p=>p.node.hidden=true);group={names,node,key,until:Date.now()+ms,lockUntil:explicit?Date.now()+ms:0,playbackURL:cycle?.url||''};if(settings.gravity)node.style.top=Math.min(parseFloat(node.style.top),groundTop(height))+'px';if(cycle){const active=group;active.until=active.lockUntil=Infinity;img.decode().then(()=>{if(group===active)active.until=active.lockUntil=actionDeadline(cycle.mode,cycle.seconds,cycle.duration);}).catch(()=>{if(group===active){endCombo();tell('互动图片无法显示。');}});}return true;
   }
   async function hugAny(stack=false){const names=[...pets.keys()];for(let i=0;i<names.length;i++)for(let j=i+1;j<names.length;j++)if(comboFor([names[i],names[j]],stack)&&await requestHug(pets.get(names[i]),names[j],stack)){dialog.close();return true;}tell(stack?'请放出两只支持叠叠乐的伙伴；小黑猫和g老师不参与互动。':'请放出一组能贴贴的伙伴，例如祈梨和lumi。');return false;}
+  function tryNearbyCombo(requiredName=null){
+    if(group||Date.now()<comboCooldown)return false;
+    const available=[...pets.values()].filter(p=>!p.node.hidden&&!p.drag&&!p.vy&&!locked(p)&&(!p.manual||p.autoManual))
+      .map(p=>({name:p.name,x:p.x,y:p.y,size:sizeOf(p.name)}));
+    let keys=nearbyCombos(available).filter(key=>(!requiredName||comboNames(key).includes(requiredName))&&
+      (!HUMAN_COMBOS[key]||comboNames(key).every(name=>settings.builtinSkins[name]!=='classic')));
+    // Give an assembled trio a fair chance instead of always taking the first pair.
+    const trios=keys.filter(key=>comboNames(key).length===3);
+    if(trios.length&&Math.random()<.6)keys=trios;
+    const fresh=keys.filter(key=>key!==lastAutoCombo);if(fresh.length)keys=fresh;
+    if(!keys.length)return false;
+    const key=keys[Math.floor(Math.random()*keys.length)];
+    if(!hug(comboNames(key),false,7500,false,null,key))return false;
+    lastAutoCombo=key;return true;
+  }
   function buildPets(){hideMenu();endCombo();for(const p of pets.values())clearPlayback(p);pets.clear();layer.replaceChildren();layer.hidden=!settings.enabled;
     settings.pets.forEach((name,index)=>{
       const node=button('',()=>{},'lp-pet'),img=el('img'),speech=el('span','lp-bubble');node.setAttribute('aria-label',`${label(name)}：点击打开喂食、摸摸、动作和魔法门，拖动移动，右键打开面板`);node.title=label(name)+' · 点击互动 / 右键小面板';node.style.width=node.style.height=sizeOf(name)+'px';img.alt=label(name);img.draggable=false;speech.hidden=true;
@@ -163,7 +179,7 @@ export function boot(){
       node.addEventListener('contextmenu',e=>{e.preventDefault();selected=name;open('home',node);});
       node.addEventListener('pointerdown',e=>{if(e.button!==0)return;hideMenu();selected=name;p.vy=0;p.suppress=false;p.drag={id:e.pointerId,x:e.clientX,y:e.clientY,left:p.x,top:p.y,moved:false};p.lastTouch=Date.now();node.setPointerCapture(e.pointerId);});
       node.addEventListener('pointermove',e=>{const d=p.drag;if(!d||d.id!==e.pointerId)return;if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>7)d.moved=true;if(d.moved){p.x=d.left+e.clientX-d.x;p.y=d.top+e.clientY-d.y;place(p);}});
-      const finish=e=>{const d=p.drag;if(!d||d.id!==e.pointerId)return;p.drag=null;p.suppress=d.moved;if(node.hasPointerCapture(e.pointerId))node.releasePointerCapture(e.pointerId);if(d.moved){remember(p);save();const nearby=[...pets.values()].find(other=>other!==p&&Math.abs(other.x-p.x)<(sizeOf(name)+sizeOf(other.name))*.275&&Math.abs(other.y-p.y)<(sizeOf(name)+sizeOf(other.name))*.325);if(e.type==='pointerup'&&nearby&&hug([name,nearby.name],true))return;if(!settings.gravity&&!locked(p))manual(p,'开心蹦蹦','就在这里陪你。',1900);}};
+      const finish=e=>{const d=p.drag;if(!d||d.id!==e.pointerId)return;p.drag=null;p.suppress=d.moved;if(node.hasPointerCapture(e.pointerId))node.releasePointerCapture(e.pointerId);if(d.moved){remember(p);save();if(e.type==='pointerup'&&tryNearbyCombo(name))return;if(!settings.gravity&&!locked(p))manual(p,'开心蹦蹦','就在这里陪你。',1900);}};
       node.addEventListener('pointerup',finish);node.addEventListener('pointercancel',finish);
     });
   }
@@ -223,7 +239,7 @@ export function boot(){
       const action=p.manual&&!p.autoManual?p.manual:automatic|| (musicPlaying&&mapped(p,'music')) || p.manual || mapped(p,walking?(p.direction<0?'walkLeft':'walkRight'):idle>60000?'sleep':'idle');
       showAction(p,action||'待机');
     }
-    if(!panelOpen&&menu.hidden&&!busy&&!musicPlaying&&!group&&now>comboCooldown){const list=[...pets.values()].filter(p=>!p.drag&&!p.vy&&!p.manual);outer:for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){const a=list[i],b=list[j];if(Math.abs(a.x-b.x)<(sizeOf(a.name)+sizeOf(b.name))*.25&&Math.abs(a.y-b.y)<20&&hug([a.name,b.name]))break outer;}}
+    if(!panelOpen&&menu.hidden&&!busy&&!musicPlaying&&!group&&now>comboCooldown&&now>=nextComboCheck){nextComboCheck=now+900;if(Math.random()<.85)tryNearbyCombo();}
   }
   function listen(name,fn){const event=ctx.eventTypes?.[name]||ctx.event_types?.[name];if(!event||!ctx.eventSource)return;ctx.eventSource.on(event,fn);cleanups.push(()=>ctx.eventSource.removeListener?.(event,fn));}
   listen('GENERATION_STARTED',(type,options,dryRun)=>{if(dryRun||type==='quiet')return;chatBusy=true;chatStarted=Date.now();if(settings.react){endCombo(false);for(const p of pets.values()){if(locked(p))continue;p.manual='';p.lastTouch=Date.now();showAction(p,mapped(p,'generation')||'待机');}}if(settings.react)allSay('正在写回复，我陪你一起等。');});
