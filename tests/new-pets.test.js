@@ -40,11 +40,11 @@ test('fox keeps upstream exclusions and special scenes out of automatic combinat
     assert.equal(comboFor(['梨梨哥哥','酒酒狐狸'],stack),null);
     assert.equal(comboFor(['梨梨兔兔','酒酒狐狸'],stack),'梨梨兔兔-酒酒狐狸'+(stack?'_2':''));
   }
-  assert.equal(comboFor(['酒酒狐狸','灰鸮g老师']),'酒酒狐狸-灰鸮g老师');
+  assert.equal(comboFor(['酒酒狐狸','灰鸮g老师']),null);
   assert.equal(comboFor(['酒酒狐狸','灰鸮g老师'],true),null);
   assert.equal(comboFor(['酒酒狐狸','灰鸮g老师','千千猫猫']),null);
-  assert.equal(comboFor(['千千哥哥','酒酒狐狸']),'千千哥哥-酒酒狐狸');
-  assert.ok(combosFor('酒酒狐狸').includes('千千哥哥-酒酒狐狸_扶起来'));
+  assert.equal(comboFor(['千千哥哥','酒酒狐狸']),null);
+  assert.ok(!combosFor('酒酒狐狸').includes('千千哥哥-酒酒狐狸_扶起来'));
 });
 
 test('three-person scenes preserve custom names, sizes and wardrobe settings', async () => {

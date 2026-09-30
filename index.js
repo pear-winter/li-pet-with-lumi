@@ -26,8 +26,8 @@ export function boot(){
   const label=name=>petLabel(settings,name);
   const mapped=(p,event)=>behaviorAction(settings,p.name,event);
   const sizeOf=(name,action=pets.get(name)?.action||'待机')=>settings.actionSizes[name]?.[action]??settings.actionSizes[name]?.['通用皮肤']??settings.petSizes[name]??settings.size;
-  const imageFor=(name,action)=>{const source=skinSource(settings,name,action);return (source?.startsWith('http')?source:skinUrls.get(source))||(name==='组合'?comboAsset(action):petAsset(name,action));};
-  async function refreshCostumes(){const rev=++costumeRevision;for(const group of Object.values(settings.skins))for(const source of Object.values(group)){try{const url=await costumes.load(source);if(url)skinUrls.set(source,url);}catch{}}if(disposed||rev!==costumeRevision)return;for(const p of pets.values()){const action=p.action;p.action='';showAction(p,action);}if(group){group.node.querySelector('img').src=imageFor('组合',group.key);resizeCombo();}renderHome();}
+  const imageFor=(name,action)=>{const source=skinSource(settings,name,action);return (source?.startsWith('http')?source:skinUrls.get(source))||(name==='组合'?comboAsset(action):petAsset(name,action,settings.builtinSkins[name]==='classic'));};
+  async function refreshCostumes(){const rev=++costumeRevision;for(const group of [...Object.values(settings.skins),...Object.values(settings.skinCombos||{})])for(const source of Object.values(group)){try{const url=await costumes.load(source);if(url)skinUrls.set(source,url);}catch{}}if(disposed||rev!==costumeRevision)return;for(const p of pets.values()){const action=p.action;p.action='';showAction(p,action);}if(group){group.node.querySelector('img').src=imageFor('组合',group.key);resizeCombo();}renderHome();}
   const resolveImage=async(name,action)=>{const source=skinSource(settings,name,action);try{return source?(await costumes.load(source)||imageFor(name,action)):imageFor(name,action);}catch{return imageFor(name,action);}};
   const listeners=new Set();let notifyTimer=0;
   // 0.3.5：对外通知（工作台桌宠页用）。合并 150ms 内的多次变化，避免频繁刷新。
@@ -92,7 +92,7 @@ export function boot(){
   for(const [id,label] of [['home','小小伙伴'],['settings','小设置'],['wardrobe','换装动作']]){
     const b=button(label,()=>showTab(id));b.dataset.tab=id;nav.append(b);const p=el('section','lp-page');p.hidden=true;pages.set(id,p);body.append(p);
   }
-  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.11');dialog.append(head,nav,body,foot);
+  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.12');dialog.append(head,nav,body,foot);
   function showTab(id){if(!pages.has(id))id='home';tab=id;for(const[k,p]of pages)p.hidden=k!==id;for(const b of nav.children)b.setAttribute('aria-selected',String(b.dataset.tab===id));if(id==='wardrobe')renderWardrobe({page:pages.get(id),settings,save,costumes,resolveImage,refresh:refreshCostumes,tell,selected});}
   function open(id='home',opener=null){hideMenu();lastOpener=opener||document.activeElement;renderHome();renderSettings();showTab(id);if(!dialog.open)dialog.showModal();panelOpen=true;close.focus();}
   on(dialog,'close',()=>{panelOpen=false;lastOpener?.isConnected&&lastOpener.focus?.();});
@@ -152,7 +152,7 @@ export function boot(){
     node.style.width=width+'px';node.style.height=height+'px';node.style.left=clamp(participants.reduce((s,p)=>s+p.x,0)/participants.length,v.left+4,v.left+v.width-width-4)+'px';node.style.top=clamp(Math.max(...participants.map(p=>p.y+sizeOf(p.name)))-height,v.top+4,v.top+v.height-height-4)+'px';
     layer.append(node);participants.forEach(p=>p.node.hidden=true);group={names,node,key,until:Date.now()+ms,lockUntil:explicit?Date.now()+ms:0,playbackURL:cycle?.url||''};if(settings.gravity)node.style.top=Math.min(parseFloat(node.style.top),groundTop(height))+'px';if(cycle){const active=group;active.until=active.lockUntil=Infinity;img.decode().then(()=>{if(group===active)active.until=active.lockUntil=actionDeadline(cycle.mode,cycle.seconds,cycle.duration);}).catch(()=>{if(group===active){endCombo();tell('互动图片无法显示。');}});}return true;
   }
-  async function hugAny(stack=false){const names=[...pets.keys()];for(let i=0;i<names.length;i++)for(let j=i+1;j<names.length;j++)if(comboFor([names[i],names[j]],stack)&&await requestHug(pets.get(names[i]),names[j],stack)){dialog.close();return true;}tell(stack?'请放出两只支持叠叠乐的伙伴；g老师只参与双人看书贴贴。':'请放出一组能贴贴的伙伴，例如梨梨兔兔和千千猫猫。');return false;}
+  async function hugAny(stack=false){const names=[...pets.keys()];for(let i=0;i<names.length;i++)for(let j=i+1;j<names.length;j++)if(comboFor([names[i],names[j]],stack)&&await requestHug(pets.get(names[i]),names[j],stack)){dialog.close();return true;}tell(stack?'请放出两只支持叠叠乐的伙伴；小黑猫和g老师不参与互动。':'请放出一组能贴贴的伙伴，例如祈梨和lumi。');return false;}
   function buildPets(){hideMenu();endCombo();for(const p of pets.values())clearPlayback(p);pets.clear();layer.replaceChildren();layer.hidden=!settings.enabled;
     settings.pets.forEach((name,index)=>{
       const node=button('',()=>{},'lp-pet'),img=el('img'),speech=el('span','lp-bubble');node.setAttribute('aria-label',`${label(name)}：点击打开喂食、摸摸、动作和魔法门，拖动移动，右键打开面板`);node.title=label(name)+' · 点击互动 / 右键小面板';node.style.width=node.style.height=sizeOf(name)+'px';img.alt=label(name);img.draggable=false;speech.hidden=true;
@@ -252,8 +252,8 @@ export function boot(){
     save();renderHome();renderSettings();return true;
   }
   const api={
-    open,dispose,version:'0.3.11',
-    getState(){return{version:'0.3.11',enabled:settings.enabled,user:settings.name,
+    open,dispose,version:'0.3.12',
+    getState(){return{version:'0.3.12',enabled:settings.enabled,user:settings.name,
       settings:{name:settings.name,size:settings.size,speed:settings.speed,wander:settings.wander,bubbles:settings.bubbles,react:settings.react,music:settings.music,gravity:settings.gravity,playful:settings.playful,actionMode:settings.actionMode,actionSeconds:settings.actionSeconds,theme:settings.theme},
       musicPlaying,
       pets:PETS.map(name=>{const p=pets.get(name);return{id:name,name:label(name),original:name,size:sizeOf(name),on:settings.pets.includes(name),visible:!!p&&!p.node.hidden&&settings.enabled,action:p?.action||'',busy:!!p&&locked(p),actions:[...(CATALOG.pets[name]||[])],costumes:Object.keys(settings.skins?.[name]||{})};})};},

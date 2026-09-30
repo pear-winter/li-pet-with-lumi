@@ -19,6 +19,13 @@ export async function loadCycle(source){
   const reader=response.body.getReader();const chunks=[];let size=0;
   try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>8*1024*1024)throw Error('动作图片超过 8MB，请选择按时间持续。');chunks.push(value);}}
   catch(error){await reader.cancel();throw error;}
-  const blob=new Blob(chunks,{type:'image/gif'}),duration=gifDuration(await blob.arrayBuffer());
+  let blob=new Blob(chunks,{type:'image/gif'});
+  const bytes=new Uint8Array(await blob.arrayBuffer());
+  if(String.fromCharCode(...bytes.slice(0,4))==='<svg'){
+    const matches=[...new TextDecoder().decode(bytes).matchAll(/data:image\/gif;base64,([A-Za-z0-9+/=]+)/g)];
+    if(matches.length===1){const raw=Uint8Array.from(atob(matches[0][1]),c=>c.charCodeAt(0));blob=new Blob([raw],{type:'image/gif'});}
+    else if(matches.length>1){const duration=Math.max(...matches.map(m=>gifDuration(Uint8Array.from(atob(m[1]),c=>c.charCodeAt(0)))));return {url:URL.createObjectURL(new Blob([bytes],{type:'image/svg+xml'})),duration};}
+  }
+  const duration=gifDuration(await blob.arrayBuffer());
   return {url:URL.createObjectURL(blob),duration};
 }
