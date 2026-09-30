@@ -1,4 +1,5 @@
-import { CATALOG } from './catalog.js';
+import { BUILTIN_SKINS, builtinURL } from './builtins.js';
+import { CATALOG, COMBO_FILES } from './catalog.js';
 export const BEHAVIORS = {
   generation:['生成 / 重抽回复','敲代码'], typing:['在输入框打字','敲代码'],
   atelier:['梨梨画室工作中','敲代码'], meow:['喵喵星绘工作中','敲代码'],
@@ -14,7 +15,34 @@ export const idleAction=name=>name==='陈野'?'发呆':'待机';
 export const resolvePetAction=(name,action)=>name==='陈野'?(CATALOG.pets[name].includes(action)?action:CHENYE_ALIASES[action]||'发呆'):action;
 export const actionsFor=name=>name==='陈野'?[...CATALOG.pets[name]]:[...new Set([...(CATALOG.pets[name]||[]),'听音乐','摸摸头'])];
 export const costumeActionsFor=name=>['通用皮肤',...actionsFor(name)];
-export function skinSource(settings,name,action){const skins=settings.skins[name]||{};if(name==='组合')return skins[action];return skins[resolvePetAction(name,action)]||skins['通用皮肤']||skins[settings.showcase[name]||idleAction(name)]||skins[idleAction(name)];}
+export function touchSkin(settings,name){
+ settings.skinChangedAt??={};settings.skinChangedAt[name]=Math.max(Date.now(),...Object.values(settings.skinChangedAt).map(Number).filter(Number.isFinite))+1;
+}
+export function builtinOptions(name){return BUILTIN_SKINS[name]?[{id:'human',name:'默认人形皮肤'},...(name==='砂金'?[]:[{id:'classic',name:'原版皮肤'}])]:[];}
+export function selectBuiltin(settings,name,id){
+ if(!builtinOptions(name).some(o=>o.id===id))throw Error('没有这套内置皮肤。');
+ settings.builtinSkins??={};settings.builtinSkins[name]=id;delete settings.skins[name];
+ if(settings.skinCombos)delete settings.skinCombos[name];touchSkin(settings,name);
+}
+export function skinSource(settings,name,action){
+ const skins=settings.skins[name]||{};
+ if(name==='组合'){
+   const members=action.split('_')[0].split('-');
+   const candidates=members.map(p=>({source:settings.skinCombos?.[p]?.[action]||
+     (BUILTIN_SKINS[p]?defaultComboSource(action,settings.builtinSkins?.[p]==='classic'):null),time:settings.skinChangedAt?.[p]||0}));
+   if(skins[action])candidates.push({source:skins[action],time:settings.skinChangedAt?.['组合']||0});
+   return candidates.filter(c=>c.source).sort((a,b)=>b.time-a.time)[0]?.source;
+ }
+ return skins[resolvePetAction(name,action)]||skins['通用皮肤']||skins[settings.showcase[name]||idleAction(name)]||skins[idleAction(name)];
+}
+export function defaultComboSource(key,classic=false){
+ const supplied=!classic&&Object.values(BUILTIN_SKINS).map(s=>s.combos[key]).find(Boolean);
+ if(supplied)return builtinURL(supplied);
+ if(key==='酒酒狐狸-砂金')return builtinURL('assets/skins/aventurine/with-jiujiu.svg');
+ const path=COMBO_FILES[key]||'贴贴/'+key.replaceAll('千千哥哥','哥哥狗狗').replaceAll('酒酒狐狸','99狐狐')+'.gif';
+ return builtinURL('assets/'+path.split('/').map(encodeURIComponent).join('/'));
+}
+
 export function validSource(value){
   if(typeof value!=='string'||value.length>4096)return '';
   if(/^local:[a-f0-9-]{36}$/i.test(value))return value;
@@ -28,7 +56,15 @@ export function normalizeCustomization(v){
     if(name==='组合')continue;
     for(const event of Object.keys(BEHAVIORS)){const a=v.behaviorMap?.[name]?.[event];if(a==='__none__'||actionsFor(name).includes(a))(behaviorMap[name]??={})[event]=a;}
   }
-  return {skins,behaviorMap,actionSizes};
+  const builtinSkins={},skinChangedAt={},skinCombos={};
+  for(const name of [...Object.keys(CATALOG.pets),'组合']){
+    if(builtinOptions(name).some(o=>o.id===v.builtinSkins?.[name]))builtinSkins[name]=v.builtinSkins[name];
+    if(Number.isSafeInteger(v.skinChangedAt?.[name])&&v.skinChangedAt[name]>=0)skinChangedAt[name]=v.skinChangedAt[name];
+    if(name!=='组合')for(const key of CATALOG.combos)if(key.split('_')[0].split('-').includes(name)){
+      const source=validSource(v.skinCombos?.[name]?.[key]);if(source)(skinCombos[name]??={})[key]=source;
+    }
+  }
+  return {skins,behaviorMap,actionSizes,builtinSkins,skinChangedAt,skinCombos};
 }
 export function behaviorAction(settings,name,event){
   const saved=settings.behaviorMap?.[name]?.[event];
