@@ -1,5 +1,5 @@
 import { CATALOG } from './catalog.js';
-import { PETS, petLabel } from './core.js';
+import { PETS, petLabel, comboNames, comboKind } from './core.js';
 import { costumeActionsFor, validSource } from './customization.js';
 import { listOutfits, saveOutfit, applySavedOutfit, deleteOutfit, exportOutfit, applyOutfit } from './outfits.js';
 
@@ -7,8 +7,7 @@ import { listOutfits, saveOutfit, applySavedOutfit, deleteOutfit, exportOutfit, 
 // 大小单位是像素；size 为 null 表示跟随伙伴大小，base 是此时实际使用的大小。
 export function createWardrobeApi({ settings, save, costumes, refresh }) {
   const ctx = () => ({ settings: settings(), costumes, save, refresh });
-  const comboNames = key => key.replace(/_2$/, '').split('-');
-  const comboLabel = (st, key) => comboNames(key).map(n => petLabel(st, n)).join('、') + ' · ' + (key.endsWith('_2') ? '叠叠乐' : comboNames(key).includes('灰鸮g老师') ? '一起看书' : '贴贴');
+  const comboLabel = (st, key) => comboNames(key).map(n => petLabel(st, n)).join('、') + ' · ' + comboKind(key);
   const actionsOf = name => name === '组合' ? CATALOG.combos : PETS.includes(name) ? costumeActionsFor(name) : null;
   const check = (name, action) => {
     const list = actionsOf(name);

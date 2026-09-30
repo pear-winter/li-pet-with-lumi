@@ -16,7 +16,7 @@ try{
   await page.goto(url);await page.waitForSelector('.lp-pet');assert.equal(await page.locator('.lp-pet').count(),2);
   assert.equal(await page.locator('#lp-wand-entry').count(),1);
   await page.keyboard.press('Escape');await page.click('#lp-wand-entry');await page.waitForSelector('#lp-dialog[open]');
-  assert.equal(await page.locator('.lp-card').count(),6);
+  assert.equal(await page.locator('.lp-card').count(),8);
   await page.screenshot({path:`${screenshots}/home-${viewport.width}.png`});
   assert.ok(await page.evaluate(()=>{const r=document.getElementById('lp-dialog').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&r.height<=innerHeight}));
   assert.equal(await page.getByRole('button',{name:'一起做事',exact:true}).count(),0);assert.equal(await page.getByRole('button',{name:'陪伴日记',exact:true}).count(),0);
