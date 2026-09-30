@@ -1,3 +1,4 @@
+import { BUILTIN_SKINS } from './builtins.js';
 export const CATALOG = {
   "pets": {
     "千千猫猫": [
@@ -321,3 +322,18 @@ export const COMBO_FILES = {
   "梨梨兔兔-梨梨哥哥-陈野_举高高": "陈野/互动_03_陈野白川梨梨_举高高.gif",
   "梨梨兔兔-梨梨哥哥-陈野_牵手手": "陈野/互动_04_陈野白川梨梨_牵手手.gif"
 };
+
+// Explicit relationship allowlist; stable internal IDs preserve existing settings.
+const allowedPairs = [
+ ['千千猫猫','梨梨兔兔'], ['梨梨兔兔','梨梨哥哥'],
+ ['千千猫猫','千千哥哥'], ['梨梨兔兔','酒酒狐狸'],
+ ['梨梨哥哥','陈野'], ['梨梨兔兔','陈野'], ['酒酒狐狸','砂金']
+];
+const allowedTrios = [['梨梨兔兔','梨梨哥哥','陈野'],['千千猫猫','梨梨兔兔','酒酒狐狸']];
+export const relationshipAllowed = names => (names.length===2?allowedPairs:names.length===3?allowedTrios:[])
+ .some(group=>group.length===names.length&&group.every(n=>names.includes(n)));
+CATALOG.combos=CATALOG.combos.filter(key=>relationshipAllowed(key.split('_')[0].split('-')));
+CATALOG.combos.push('酒酒狐狸-砂金');
+for(const [pet,skin] of Object.entries(BUILTIN_SKINS))
+ CATALOG.pets[pet]=[...new Set([...(CATALOG.pets[pet]||[]),...Object.keys(skin.actions)])];
+export const DEFAULT_LABELS={'梨梨兔兔':'祈梨','梨梨哥哥':'白川','千千猫猫':'lumi','千千哥哥':'lumi哥哥','酒酒狐狸':'酒酒','煤球猫猫':'小黑猫','灰鸮g老师':'g老师'};
