@@ -1,6 +1,6 @@
 import { CATALOG } from './catalog.js';
 import { PETS, petLabel, comboNames, comboKind } from './core.js';
-import { costumeActionsFor, validSource } from './customization.js';
+import { costumeActionsFor, validSource, builtinOptions, selectBuiltin, touchSkin } from './customization.js';
 import { listOutfits, saveOutfit, applySavedOutfit, deleteOutfit, exportOutfit, applyOutfit } from './outfits.js';
 
 // 0.3.10：给梨梨工作台「换装 / 动作大小」用的接口。和面板里的换装页共用同一份设置、同一个本地图片仓库。
@@ -20,10 +20,12 @@ export function createWardrobeApi({ settings, save, costumes, refresh }) {
   async function replace(name, action, source) {
     const st = settings(), old = st.skins[name]?.[action];
     if (source) (st.skins[name] ??= {})[action] = source; else if (st.skins[name]) delete st.skins[name][action];
-    save(); await refresh();
+    touchSkin(st,name);save(); await refresh();
     if (old && old !== source) { try { await costumes.remove(old); } catch {} }
   }
   return {
+    listBuiltinSkins: name => builtinOptions(name),
+    async applyBuiltinSkin(name,id){const st=settings();selectBuiltin(st,name,id);save();await refresh();},
     get(name) {
       const st = settings(), list = actionsOf(name);
       if (!list) throw Error('没有这只伙伴。');
@@ -57,10 +59,10 @@ export function createWardrobeApi({ settings, save, costumes, refresh }) {
     },
     // 整套皮肤：和面板「整套皮肤」共用同一个本地套装库（li-pet-outfits）
     listSkins: () => listOutfits(),                      // -> [{ id, name }]
-    saveSkin: name => saveOutfit(settings(), costumes, name),
+    saveSkin: (name,character) => saveOutfit(settings(), costumes, name,character),
     applySkin: id => applySavedOutfit(id, ctx()),
     deleteSkin: id => deleteOutfit(id),
-    exportSkin: name => exportOutfit(settings(), costumes, name),
+    exportSkin: (name,character) => exportOutfit(settings(), costumes, name,character),
     importSkin: file => applyOutfit(file, ctx())
   };
 }
