@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 const runtime=process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES;
 const {chromium}=await import(runtime?`${runtime}/playwright/index.mjs`:'playwright');
 const root=path.resolve(fileURLToPath(new URL('..',import.meta.url)));
-const server=createServer(async(req,res)=>{try{const url=new URL(req.url,'http://localhost'),rel=url.pathname==='/'?'tests/fixture.html':decodeURIComponent(url.pathname.replace('/renamed-extension/',''));const file=path.resolve(root,rel);if(!file.startsWith(root+path.sep))throw Error('path');const bytes=await readFile(file);res.writeHead(200,{'Content-Type':({'.html':'text/html','.js':'text/javascript','.css':'text/css','.gif':'image/gif'})[path.extname(file)]||'application/octet-stream'});res.end(bytes);}catch{res.writeHead(404);res.end();}});
+const server=createServer(async(req,res)=>{try{const url=new URL(req.url,'http://localhost'),rel=url.pathname==='/'?'tests/fixture.html':decodeURIComponent(url.pathname.replace('/renamed-extension/',''));const file=path.resolve(root,rel);if(!file.startsWith(root+path.sep))throw Error('path');const bytes=await readFile(file);res.writeHead(200,{'Content-Type':({'.html':'text/html','.js':'text/javascript','.css':'text/css','.gif':'image/gif','.svg':'image/svg+xml'})[path.extname(file)]||'application/octet-stream'});res.end(bytes);}catch{res.writeHead(404);res.end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}`;
 const browser=await chromium.launch({headless:true,executablePath:process.env.LP_CHROMIUM_PATH||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
 const screenshots=process.env.LP_SCREENSHOTS||'/tmp/li-pet-test';await mkdir(screenshots,{recursive:true});
@@ -16,7 +16,7 @@ try{
   await page.goto(url);await page.waitForSelector('.lp-pet');assert.equal(await page.locator('.lp-pet').count(),2);
   assert.equal(await page.locator('#lp-wand-entry').count(),1);
   await page.keyboard.press('Escape');await page.click('#lp-wand-entry');await page.waitForSelector('#lp-dialog[open]');
-  assert.equal(await page.locator('.lp-card').count(),8);
+  assert.equal(await page.locator('.lp-card').count(),9);
   await page.screenshot({path:`${screenshots}/home-${viewport.width}.png`});
   assert.ok(await page.evaluate(()=>{const r=document.getElementById('lp-dialog').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&r.height<=innerHeight}));
   assert.equal(await page.getByRole('button',{name:'一起做事',exact:true}).count(),0);assert.equal(await page.getByRole('button',{name:'陪伴日记',exact:true}).count(),0);
@@ -131,14 +131,14 @@ try{
   await page.evaluate(()=>window.advance=121000);await page.waitForFunction(()=>document.querySelector('.lp-pet').dataset.state==='听音乐');
   await page.evaluate(()=>{restoreActionClock();document.querySelector('.ll-player').remove();});
   await openActions();await quick.getByRole('button',{name:'互动',exact:true}).click();
-  assert.deepEqual(await quick.locator('button:not(.lp-quick-close)').allTextContents(),['千千猫猫','与 千千猫猫、千千哥哥 · 贴贴','与 千千猫猫、千千哥哥 · 叠叠乐','返回','关闭动作面板']);
-  await quick.getByRole('button',{name:'千千猫猫',exact:true}).click();await quick.getByRole('button',{name:'贴贴',exact:true}).click();await page.waitForSelector('.lp-combo');await page.waitForTimeout(100);assert.ok(await quick.isVisible());assert.equal(await page.locator('.lp-combo').count(),1);
+  assert.deepEqual(await quick.locator('button:not(.lp-quick-close)').allTextContents(),['lumi','返回','关闭动作面板']);
+  await quick.getByRole('button',{name:'lumi',exact:true}).click();await quick.getByRole('button',{name:'贴贴',exact:true}).click();await page.waitForSelector('.lp-combo');await page.waitForTimeout(100);assert.ok(await quick.isVisible());assert.equal(await page.locator('.lp-combo').count(),1);
   await page.evaluate(()=>{const original=Date.now;window.advance=0;window.restoreActionClock=()=>Date.now=original;Date.now=()=>original()+window.advance;events.emit('GENERATION_STARTED','normal',{},false);events.emit('GENERATION_STOPPED');events.emit('CHAT_CHANGED');const music=document.createElement('div');music.className='ll-player is-playing';document.body.append(music);window.advance=119000;});
   await page.waitForTimeout(400);assert.equal(await page.locator('.lp-combo').count(),1);
   await page.screenshot({path:`${screenshots}/chosen-interaction-${viewport.width}.png`});
   await page.evaluate(()=>window.advance=121000);await page.waitForFunction(()=>!document.querySelector('.lp-combo'));
   await page.evaluate(()=>{restoreActionClock();document.querySelector('.ll-player').remove();});
-  await page.keyboard.press('Escape');await page.click('#lp-wand-entry');await page.locator('.lp-card').filter({hasText:'千千猫猫'}).click();await page.getByRole('button',{name:'关闭桌宠面板'}).click();
+  await page.keyboard.press('Escape');await page.click('#lp-wand-entry');await page.locator('.lp-card[data-pet="千千猫猫"]').click();await page.getByRole('button',{name:'关闭桌宠面板'}).click();
   await openActions();await quick.getByRole('button',{name:'互动',exact:true}).click();assert.deepEqual(await quick.locator('button:not(.lp-quick-close)').allTextContents(),['返回','关闭动作面板']);
   // Independent entries: Actions is to the left of Magic Door, absent inside it.
   await page.keyboard.press('Escape');await page.locator('.lp-pet').first().click();
