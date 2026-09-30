@@ -131,7 +131,7 @@ try{
   await page.evaluate(()=>window.advance=121000);await page.waitForFunction(()=>document.querySelector('.lp-pet').dataset.state==='听音乐');
   await page.evaluate(()=>{restoreActionClock();document.querySelector('.ll-player').remove();});
   await openActions();await quick.getByRole('button',{name:'互动',exact:true}).click();
-  assert.deepEqual(await quick.locator('button:not(.lp-quick-close)').allTextContents(),['千千猫猫','返回','关闭动作面板']);
+  assert.deepEqual(await quick.locator('button:not(.lp-quick-close)').allTextContents(),['千千猫猫','与 千千猫猫、千千哥哥 · 贴贴','与 千千猫猫、千千哥哥 · 叠叠乐','返回','关闭动作面板']);
   await quick.getByRole('button',{name:'千千猫猫',exact:true}).click();await quick.getByRole('button',{name:'贴贴',exact:true}).click();await page.waitForSelector('.lp-combo');await page.waitForTimeout(100);assert.ok(await quick.isVisible());assert.equal(await page.locator('.lp-combo').count(),1);
   await page.evaluate(()=>{const original=Date.now;window.advance=0;window.restoreActionClock=()=>Date.now=original;Date.now=()=>original()+window.advance;events.emit('GENERATION_STARTED','normal',{},false);events.emit('GENERATION_STOPPED');events.emit('CHAT_CHANGED');const music=document.createElement('div');music.className='ll-player is-playing';document.body.append(music);window.advance=119000;});
   await page.waitForTimeout(400);assert.equal(await page.locator('.lp-combo').count(),1);
