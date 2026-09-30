@@ -1,4 +1,4 @@
-import { BUILTIN_SKINS, builtinURL } from './builtins.js';
+import { BUILTIN_SKINS, QILI_SCHOOL_SKIN, builtinURL } from './builtins.js';
 import { CATALOG, COMBO_FILES } from './catalog.js';
 export const BEHAVIORS = {
   generation:['生成 / 重抽回复','敲代码'], typing:['在输入框打字','敲代码'],
@@ -18,7 +18,7 @@ export const costumeActionsFor=name=>['通用皮肤',...actionsFor(name)];
 export function touchSkin(settings,name){
  settings.skinChangedAt??={};settings.skinChangedAt[name]=Math.max(Date.now(),...Object.values(settings.skinChangedAt).map(Number).filter(Number.isFinite))+1;
 }
-export function builtinOptions(name){return BUILTIN_SKINS[name]?[{id:'human',name:'默认人形皮肤'},...(name==='砂金'?[]:[{id:'classic',name:'原版皮肤'}])]:[];}
+export function builtinOptions(name){return BUILTIN_SKINS[name]?[{id:'human',name:name==='梨梨兔兔'?'骇客梨梨':'默认人形皮肤'},...(name==='梨梨兔兔'?[{id:'school',name:'校服梨梨'}]:[]),...(name==='砂金'?[]:[{id:'classic',name:'原版皮肤'}])]:[];}
 export function selectBuiltin(settings,name,id){
  if(!builtinOptions(name).some(o=>o.id===id))throw Error('没有这套内置皮肤。');
  settings.builtinSkins??={};settings.builtinSkins[name]=id;delete settings.skins[name];
@@ -29,11 +29,11 @@ export function skinSource(settings,name,action){
  if(name==='组合'){
    const members=action.split('_')[0].split('-');
    const candidates=members.map(p=>({source:settings.skinCombos?.[p]?.[action]||
-     (BUILTIN_SKINS[p]?defaultComboSource(action,settings.builtinSkins?.[p]==='classic'):null),time:settings.skinChangedAt?.[p]||0,custom:!!settings.skinCombos?.[p]?.[action]}));
+     (p==='梨梨兔兔'&&settings.builtinSkins?.[p]==='school'&&QILI_SCHOOL_SKIN.combos[action]?builtinURL(QILI_SCHOOL_SKIN.combos[action]):BUILTIN_SKINS[p]?defaultComboSource(action,settings.builtinSkins?.[p]==='classic'):null),time:settings.skinChangedAt?.[p]||0,custom:!!settings.skinCombos?.[p]?.[action]}));
    if(skins[action])candidates.push({source:skins[action],time:settings.skinChangedAt?.['组合']||0,custom:true});
    return candidates.filter(c=>c.source).sort((a,b)=>b.time-a.time||Number(b.custom)-Number(a.custom))[0]?.source;
  }
- return skins[resolvePetAction(name,action)]||skins['通用皮肤']||skins[settings.showcase[name]||idleAction(name)]||skins[idleAction(name)];
+ return skins[resolvePetAction(name,action)]||skins['通用皮肤']||skins[settings.showcase[name]||idleAction(name)]||skins[idleAction(name)]||(name==='梨梨兔兔'&&settings.builtinSkins?.[name]==='school'?builtinURL(QILI_SCHOOL_SKIN.actions[action]||QILI_SCHOOL_SKIN.actions['待机']):undefined);
 }
 export function defaultComboSource(key,classic=false){
  const supplied=!classic&&Object.values(BUILTIN_SKINS).map(s=>s.combos[key]).find(Boolean);

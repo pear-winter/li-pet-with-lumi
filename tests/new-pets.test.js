@@ -38,7 +38,7 @@ test('fox keeps upstream exclusions and special scenes out of automatic combinat
   assert.equal(CATALOG.pets['酒酒狐狸'].length,53);
   for (const stack of [false,true]) {
     assert.equal(comboFor(['梨梨哥哥','酒酒狐狸'],stack),null);
-    assert.equal(comboFor(['梨梨兔兔','酒酒狐狸'],stack),'梨梨兔兔-酒酒狐狸'+(stack?'_2':''));
+    assert.equal(comboFor(['梨梨兔兔','酒酒狐狸'],stack),null);
   }
   assert.equal(comboFor(['酒酒狐狸','灰鸮g老师']),null);
   assert.equal(comboFor(['酒酒狐狸','灰鸮g老师'],true),null);

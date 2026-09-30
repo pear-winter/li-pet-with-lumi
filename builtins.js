@@ -192,3 +192,42 @@ export const HUMAN_COMBOS = {
   "梨梨兔兔-陈野_逗猫棒": "assets/skins/interactions/梨梨兔兔-陈野_逗猫棒.gif"
 };
 export const builtinURL = path => new URL(path, import.meta.url).href;
+
+export const QILI_SCHOOL_SKIN = {
+  "actions": {
+  "互动_写日记": "assets/skins/qili-school/动作/写日记.gif",
+  "吃饭": "assets/skins/qili-school/动作/吃饭.gif",
+  "向右看": "assets/skins/qili-school/动作/向右看.gif",
+  "向右走": "assets/skins/qili-school/动作/向右走.gif",
+  "向左看": "assets/skins/qili-school/动作/向左看.gif",
+  "向左走": "assets/skins/qili-school/动作/向左走.gif",
+  "听音乐": "assets/skins/qili-school/动作/听音乐.gif",
+  "害羞": "assets/skins/qili-school/动作/害羞.gif",
+  "开心蹦蹦": "assets/skins/qili-school/动作/开心蹦蹦.gif",
+  "待机": "assets/skins/qili-school/动作/待机.gif",
+  "打哈欠": "assets/skins/qili-school/动作/打哈欠.gif",
+  "打招呼": "assets/skins/qili-school/动作/打招呼.gif",
+  "打滚": "assets/skins/qili-school/动作/打滚.gif",
+  "掉落": "assets/skins/qili-school/动作/掉落.gif",
+  "摔趴趴": "assets/skins/qili-school/动作/摔趴趴.gif",
+  "摸摸头": "assets/skins/qili-school/动作/摸摸头.gif",
+  "敲代码": "assets/skins/qili-school/动作/敲代码.gif",
+  "比心": "assets/skins/qili-school/动作/比心.gif",
+  "睡觉": "assets/skins/qili-school/动作/睡觉.gif",
+  "跳舞": "assets/skins/qili-school/动作/跳舞.gif"
+},
+  "combos": {
+    "千千猫猫-梨梨兔兔": "assets/skins/qili-school/互动/梨梨×Lumi/贴贴.gif",
+    "千千猫猫-梨梨兔兔_2": "assets/skins/qili-school/互动/梨梨×Lumi/叠高高.gif",
+    "梨梨兔兔-梨梨哥哥": "assets/skins/qili-school/互动/梨梨×哥哥/贴贴.gif",
+    "梨梨兔兔-梨梨哥哥_2": "assets/skins/qili-school/互动/梨梨×哥哥/叠高高.gif",
+    "梨梨兔兔-陈野": "assets/skins/qili-school/互动/梨梨×陈野/贴贴.gif",
+    "梨梨兔兔-陈野_逗猫棒": "assets/skins/qili-school/互动/梨梨×陈野/逗猫棒.gif",
+    "梨梨兔兔-梨梨哥哥-陈野_举高高": "assets/skins/qili-school/互动/梨梨×哥哥×陈野/举高高.gif",
+    "梨梨兔兔-梨梨哥哥-陈野_牵手手": "assets/skins/qili-school/互动/梨梨×哥哥×陈野/拉手手.gif",
+    "梨梨兔兔-酒酒狐狸_击掌": "assets/skins/qili-school/互动/梨梨×酒酒/击掌.gif",
+    "梨梨兔兔-酒酒狐狸_戴小花": "assets/skins/qili-school/互动/梨梨×酒酒/戴小花.gif",
+    "千千猫猫-梨梨兔兔-酒酒狐狸_传星星": "assets/skins/qili-school/互动/梨梨×Lumi×酒酒/传星星.gif",
+    "千千猫猫-梨梨兔兔-酒酒狐狸_欢呼": "assets/skins/qili-school/互动/梨梨×Lumi×酒酒/欢呼.gif"
+  }
+};
