@@ -5,12 +5,12 @@ import { PETS, comboFor, comboNames, comboKind, combosFor, normalize, petAsset }
 import { actionsFor, behaviorAction, skinSource } from '../customization.js';
 import { createWardrobeApi } from '../wardrobe-api.js';
 
-test('Chenye exposes exactly supplied solo actions and four partner-specific interactions', () => {
+test('Chenye exposes exactly supplied solo actions and five partner-specific interactions', () => {
   assert.equal(actionsFor('陈野').length, 22);
   assert.deepEqual(actionsFor('陈野'), Object.keys(CHENYE_FILES));
-  assert.deepEqual(combosFor('陈野'), Object.keys(COMBO_FILES));
+  assert.deepEqual(combosFor('陈野'), Object.keys(COMBO_FILES).filter(key=>key.split('_')[0].split('-').includes('陈野')));
   assert.deepEqual(combosFor('陈野', ['陈野', '梨梨哥哥']), ['梨梨哥哥-陈野_打架']);
-  assert.deepEqual(combosFor('陈野', ['陈野', '梨梨兔兔']), ['梨梨兔兔-陈野']);
+  assert.deepEqual(combosFor('陈野', ['陈野', '梨梨兔兔']), ['梨梨兔兔-陈野','梨梨兔兔-陈野_逗猫棒']);
   assert.deepEqual(combosFor('陈野', ['陈野', '千千猫猫', '酒酒狐狸']), []);
   for (const other of PETS.filter(n => n !== '陈野')) {
     assert.equal(comboFor(['陈野', other], true), null);
@@ -35,7 +35,7 @@ test('Chenye automatic behaviors and fallback skins use real supplied assets', (
 });
 
 test('fox keeps upstream exclusions and special scenes out of automatic combinations', () => {
-  assert.equal(CATALOG.pets['酒酒狐狸'].length,50);
+  assert.equal(CATALOG.pets['酒酒狐狸'].length,53);
   for (const stack of [false,true]) {
     assert.equal(comboFor(['梨梨哥哥','酒酒狐狸'],stack),null);
     assert.equal(comboFor(['梨梨兔兔','酒酒狐狸'],stack),'梨梨兔兔-酒酒狐狸'+(stack?'_2':''));

@@ -1,4 +1,4 @@
-import { BUILTIN_SKINS } from './builtins.js';
+import { BUILTIN_SKINS, HUMAN_COMBOS } from './builtins.js';
 export const CATALOG = {
   "pets": {
     "千千猫猫": [
@@ -333,7 +333,8 @@ const allowedTrios = [['梨梨兔兔','梨梨哥哥','陈野'],['千千猫猫','
 export const relationshipAllowed = names => (names.length===2?allowedPairs:names.length===3?allowedTrios:[])
  .some(group=>group.length===names.length&&group.every(n=>names.includes(n)));
 CATALOG.combos=CATALOG.combos.filter(key=>relationshipAllowed(key.split('_')[0].split('-')));
-CATALOG.combos.push('酒酒狐狸-砂金');
+CATALOG.combos.push('酒酒狐狸-砂金',...Object.keys(HUMAN_COMBOS));
+for(const [key,path] of Object.entries(HUMAN_COMBOS))COMBO_FILES[key]=path.replace(/^assets\//,'');
 for(const [pet,skin] of Object.entries(BUILTIN_SKINS))
  CATALOG.pets[pet]=[...new Set([...(CATALOG.pets[pet]||[]),...Object.keys(skin.actions)])];
 export const DEFAULT_LABELS={'梨梨兔兔':'祈梨','梨梨哥哥':'白川','千千猫猫':'lumi','千千哥哥':'lumi哥哥','酒酒狐狸':'酒酒','煤球猫猫':'小黑猫','灰鸮g老师':'g老师'};

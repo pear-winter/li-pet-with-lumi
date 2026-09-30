@@ -55,8 +55,8 @@ try {
   await api(()=>window.__liPetWithLumi.openWardrobe('陈野'));
   assert.equal(await page.getByLabel('替换动作',{exact:true}).inputValue(),'发呆');
   const interactions=page.getByLabel('替换动作',{exact:true}).locator('optgroup[label="与其他伙伴互动"] option');
-  assert.equal(await interactions.count(),4);
-  assert.deepEqual(await interactions.allTextContents(),['与 白川 · 打架','与 梨梨 · 贴贴','与 梨梨、白川 · 举高高','与 梨梨、白川 · 牵手手']);
+  assert.equal(await interactions.count(),5);
+  assert.deepEqual(await interactions.allTextContents(),['与 白川 · 打架','与 梨梨 · 贴贴','与 梨梨、白川 · 举高高','与 梨梨、白川 · 牵手手','与 梨梨 · 逗猫棒']);
   const key='梨梨兔兔-梨梨哥哥-陈野_举高高';await page.getByLabel('替换动作',{exact:true}).selectOption(key);
   await page.waitForFunction(()=>document.querySelector('.lp-costume-preview')?.src.includes(encodeURIComponent('互动_03')));
   await page.getByLabel('当前动作大小',{exact:true}).fill('230');
@@ -66,6 +66,16 @@ try {
   assert.equal(await api(()=>window.__liPetWithLumi.wardrobe.get('组合').actions.find(a=>a.action==='梨梨兔兔-梨梨哥哥-陈野_举高高').size),230);
   await page.click('#lp-wand-entry');assert.equal(await page.locator('.lp-card').count(),9);
   await page.screenshot({path:`${screenshots}/new-pets-home-${viewport.width}.png`});
+  // New human scenes must render and nearby triples must trigger without a menu.
+  await page.evaluate(async()=>{
+   window.__liPetWithLumi.dispose();Math.random=()=>.5;
+   testContext.extensionSettings.li_pet_with_lumi={pets:['千千猫猫','梨梨兔兔','酒酒狐狸'],wander:false,playful:false,music:false,size:76,positions:{'千千猫猫':{x:.4,y:.4},'梨梨兔兔':{x:.42,y:.42},'酒酒狐狸':{x:.44,y:.44}}};
+   (await import('/renamed-extension/index.js')).boot();
+  });
+  await page.waitForSelector('.lp-combo[data-combo="千千猫猫-梨梨兔兔-酒酒狐狸_传星星"]');
+  await page.waitForFunction(()=>{const img=document.querySelector('.lp-combo img');return img?.complete&&img.naturalWidth>0});
+  assert.equal(await page.locator('.lp-pet[hidden]').count(),3);
+  await page.screenshot({path:`${screenshots}/human-nearby-trio-${viewport.width}.png`});
   assert.deepEqual(errors,[]);assert.deepEqual(missing,[]);
   await page.close();console.log('PASS new pets, exact interactions, three-member availability, wardrobe, persistence:',viewport.width);
  }

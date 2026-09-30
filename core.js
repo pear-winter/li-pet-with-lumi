@@ -22,7 +22,7 @@ export function normalize(value = {}) {
   return {...DEFAULTS,...normalizeCustomization(v),actionMode:['once','timed','until-cancel'].includes(v.actionMode)?v.actionMode:'timed',actionSeconds:clamp(v.actionSeconds??120,1,86400),...Object.fromEntries(['enabled','wander','bubbles','react','gravity','music','playful'].map(k=>[k,typeof v[k]==='boolean'?v[k]:DEFAULTS[k]])),pets,size:clamp(v.size??100,64,160),speed:clamp(v.speed??18,0,40),name:typeof v.name==='string'?v.name.slice(0,24):'梨梨',positions,petNames,petSizes,homeOrder,showcase,theme:['tavern','mono','pink'].includes(v.theme)?v.theme:'tavern',customCss:typeof v.customCss==='string'?v.customCss.slice(0,50000):''};
 }
 export const petLabel=(settings,name)=>settings.petNames?.[name]||DEFAULT_LABELS[name]||name;
-// Special scenes have explicit names and never enter automatic hugs/stacks.
+// Named scenes share the same relationship allowlist as hugs/stacks.
 export function comboNames(key){return CATALOG.combos.includes(key)?key.split('_')[0].split('-'):[];}
 export function comboKind(key){const suffix=key.slice(key.indexOf('_')+1);return key.includes('_')?(suffix==='2'?'叠叠乐':suffix):comboNames(key).includes('灰鸮g老师')?'一起看书':'贴贴';}
 export function combosFor(name,available=PETS){return CATALOG.combos.filter(key=>{const names=comboNames(key);return names.includes(name)&&names.every(n=>available.includes(n));});}
@@ -53,3 +53,14 @@ export function petAsset(name,action,classic=false) {
   return new URL(`assets/${encodeURIComponent(name.replace("千千哥哥","哥哥狗狗").replace('酒酒狐狸','99狐狐'))}/${encodeURIComponent(safeAction)}.gif`,import.meta.url).href;
 }
 export const comboAsset = key => key==='酒酒狐狸-砂金'?builtinURL('assets/skins/aventurine/with-jiujiu.svg'):new URL(`assets/${COMBO_FILES[key]?COMBO_FILES[key].split('/').map(encodeURIComponent).join('/'):`${encodeURIComponent('贴贴')}/${encodeURIComponent(key.replaceAll('千千哥哥','哥哥狗狗').replaceAll('酒酒狐狸','99狐狐'))}.gif`}`,import.meta.url).href;
+
+// Compare centers using each pet's rendered action size, including unequal sizes.
+export function nearbyCombos(participants, allowed=CATALOG.combos) {
+  const byName=new Map(participants.map(p=>[p.name,p]));
+  return allowed.filter(key=>{
+    const group=comboNames(key).map(name=>byName.get(name));
+    return group.length>=2&&group.every(Boolean)&&group.every((a,i)=>group.slice(i+1).every(b=>
+      Math.abs(a.x+a.size/2-b.x-b.size/2)<=(a.size+b.size)*.65&&
+      Math.abs(a.y+a.size/2-b.y-b.size/2)<=(a.size+b.size)*.5));
+  });
+}

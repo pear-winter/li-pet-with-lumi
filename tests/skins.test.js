@@ -10,7 +10,7 @@ test('default order, names, and complete relationship allowlist',()=>{
  ['梨梨兔兔','千千猫猫'],['梨梨兔兔','梨梨哥哥'],['梨梨兔兔','陈野'],['梨梨哥哥','陈野'],['千千猫猫','千千哥哥'],['梨梨兔兔','酒酒狐狸'],['酒酒狐狸','砂金'],['梨梨兔兔','梨梨哥哥','陈野'],['千千猫猫','梨梨兔兔','酒酒狐狸']
  ].map(g=>g.sort().join('|')).sort());
  assert.equal(combosFor('煤球猫猫').length,0);assert.equal(combosFor('灰鸮g老师').length,0);
- for(const group of ['千千猫猫-梨梨兔兔','梨梨兔兔-酒酒狐狸','千千猫猫-梨梨兔兔-酒酒狐狸'])assert.equal(CATALOG.combos.filter(k=>k.split('_')[0]===group).length,2);
+ for(const group of ['千千猫猫-梨梨兔兔','梨梨兔兔-酒酒狐狸','千千猫猫-梨梨兔兔-酒酒狐狸'])assert.ok(CATALOG.combos.filter(k=>k.split('_')[0]===group).length>=2);
 });
 test('latest character outfit wins shared interaction and survives reload',()=>{
  const s=normalize(),key='千千猫猫-梨梨兔兔';s.skinCombos={'梨梨兔兔':{[key]:'https://example.com/qili.gif'},'千千猫猫':{[key]:'https://example.com/lumi.gif'}};
