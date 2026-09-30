@@ -67,3 +67,13 @@ SillyTavern 通过 `window.SillyTavern.getContext()` 访问 `extensionSettings`�
 - `core.js` 的 `comboNames / comboKind / combosFor` 统一解析成员、动作名称与在场条件，供动作菜单、换装页和工作台 API 共用；`comboFor` 仍只返回普通贴贴／叠叠乐，不返回特殊场景。
 - 动作菜单通过 `requestCombo` 播放明确选择的组合，验证全体成员在场；异步读取 GIF 时若成员移除或选择新动作，则取消旧请求。沿用主动动作时长、锁定、取消与尺寸设置。
 - 白川 = 梨梨哥哥，梨梨 = 梨梨兔兔。不要将素材中的陈野三人组合套用普通 `_2` 叠叠乐，或用它替代双人素材。
+
+
+## 0.3.12：默认皮肤与组合精简
+
+- 内部角色 ID 不改名，`core.js` 的 DEFAULT_NAMES / HOME_ORDER 定义新的默认展示名称和顺序，以保留旧位置、换图与行为设置。旧默认序列自动迁移，自定义序列保持；主页提供恢复默认排序。
+- `builtin-skins.js` 管理 HUMAN_FILES / HUMAN_COMBOS、选项验证、默认选择与素材解析。设置字段 `builtinSkins` 保存每位的 human / original 选择；没有字段的旧设置默认采用此次人形皮肤。原版独有但人形缺少的动作在该皮肤下回退人形待机，不切回像素外观。
+- `petAsset / comboAsset` 接受第三／第二个 settings 参数；自定义换图的优先级高于内置皮肤。双人静态组合使用双方皮肤一致的素材，已有四组人形组合会在双方都选 human 时使用。其余现有双人组合保持原素材。
+- 切换内置皮肤会取消该角色正在持有的主动动作／组合，避免已缓存的一轮 GIF 继续遮住新皮肤。已有单独换图保留，必要时在界面恢复该动作。
+- `wardrobe.get(name)` 返回 builtinSkin / builtinSkins；`wardrobe.setBuiltin(name,id)` 与面板共用设置和刷新机制。整套皮肤 version 1 增加可选 builtinSkins 字段，旧包缺省采用默认皮肤。
+- `catalog.js` 的 REMOVED_COMBOS 仅用于忽略旧皮肤包中的已移除条目；不可重新用作菜单选项。删除的素材文件不再分发，旧设置中的换图与大小也会在 normalize 时过滤。

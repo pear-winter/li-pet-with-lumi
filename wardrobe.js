@@ -1,3 +1,4 @@
+import { builtinOptions, builtinId, selectBuiltin } from './builtin-skins.js';
 import { renderOutfits } from './outfits.js';
 import { petLabel, comboNames, comboKind } from './core.js';
 import { CATALOG } from './catalog.js';
@@ -8,9 +9,12 @@ export function renderWardrobe({page,settings,save,costumes,resolveImage,refresh
   const select=(label,items)=>{const wrap=el('label',label);wrap.className='lp-field';const n=el('select');n.setAttribute('aria-label',label);for(const[value,text]of items){const o=el('option',text);o.value=value;n.append(o);}wrap.append(n);page.append(wrap);return n;};
   const btn=(text,fn)=>{const b=el('button',text);b.type='button';b.className='lp-button';b.onclick=fn;return b;};
   page.append(el('h3','换装与动作'));
-  renderOutfits({page,settings,costumes,save,refresh:async()=>{await refresh();listActions();listShowcase();},tell});
-  const who=select('换装伙伴',[...Object.keys(CATALOG.pets),'组合'].map(n=>[n,n==='组合'?'所有互动组合':petLabel(settings,n)]));
+  renderOutfits({page,settings,costumes,save,refresh:async options=>{await refresh(options);listActions();listShowcase();listBuiltins();},tell});
+  const who=select('换装伙伴',[...settings.homeOrder,'组合'].map(n=>[n,n==='组合'?'所有互动组合':petLabel(settings,n)]));
   if(Object.hasOwn(CATALOG.pets,selected))who.value=selected;
+  const builtin=select('内置皮肤',[]),builtinHint=el('p','默认使用人形皮肤。单独换图的动作优先；恢复此动作可回到所选内置皮肤。');builtinHint.className='lp-hint';page.append(builtinHint);
+  function listBuiltins(){builtin.replaceChildren();const options=builtinOptions(who.value);builtin.parentElement.hidden=who.value==='组合';builtinHint.hidden=who.value==='组合'||options.length<2;for(const item of options){const option=el('option',item.label);option.value=item.id;builtin.append(option);}builtin.value=builtinId(settings,who.value)||'';builtin.disabled=options.length<2;}
+  builtin.onchange=async()=>{const name=who.value;selectBuiltin(settings,name,builtin.value);save();await refresh({builtinChanged:name});await previewCurrent();};
   const action=select('替换动作',[]),preview=el('img');preview.className='lp-costume-preview';preview.alt='动作预览';preview.referrerPolicy='no-referrer';page.append(preview);
   const field=el('label','图片链接');field.className='lp-field';const url=el('input');url.type='url';url.placeholder='https://…';field.append(url);page.append(field);
   const status=el('p');status.setAttribute('role','status');status.className='lp-hint';page.append(status);
@@ -43,7 +47,7 @@ export function renderWardrobe({page,settings,save,costumes,resolveImage,refresh
   const showcase=select('主页展示动作',[]);
   function listShowcase(){showcase.replaceChildren();showcase.parentElement.hidden=who.value==='组合';if(who.value==='组合')return;for(const key of actionsFor(who.value)){const o=el('option',key);o.value=key;showcase.append(o);}showcase.value=settings.showcase[who.value]||idleAction(who.value);}
   showcase.onchange=()=>{settings.showcase[who.value]=showcase.value;save();refresh();};
-  who.onchange=()=>{listActions();listShowcase();};action.onchange=previewCurrent;
+  who.onchange=()=>{listActions();listShowcase();listBuiltins();};action.onchange=previewCurrent;
 
   async function replace(source,name,a){if(!page.isConnected){await costumes.remove(source);return;}const old=settings.skins[name]?.[a];if(source)(settings.skins[name]??={})[a]=source;else if(settings.skins[name])delete settings.skins[name][a];save();await refresh();if(old&&old!==source){try{await costumes.remove(old);}catch{}}await previewCurrent();}
   // 0.3.10：本地上传改成和其他按钮一样的按钮，不再显示系统自带的文件框
@@ -53,11 +57,11 @@ export function renderWardrobe({page,settings,save,costumes,resolveImage,refresh
   controls.append(uploadBtn,btn('保存图片链接',async()=>{const source=validSource(url.value.trim());if(!source||source.startsWith('local:')){tell('请输入有效的 http 或 https 图片链接。');return;}await replace(source,target(),action.value);tell('动作图片已保存。');}),btn('恢复此动作',async()=>{await replace('',target(),action.value);tell('已恢复默认动作图片。');}),upload);page.append(controls);
   upload.onchange=async()=>{const file=upload.files[0],name=target(),a=action.value;if(!file)return;uploadBtn.disabled=true;try{const source=await costumes.put(file);await replace(source,name,a);tell('本地动作图片已保存。');}catch(e){tell(e.message||'图片保存失败，请重试。');}finally{uploadBtn.disabled=false;upload.value='';}};
   page.append(el('h3','酒馆行为对应动作'));
-  const pet=select('行为设置伙伴',Object.keys(CATALOG.pets).map(n=>[n,petLabel(settings,n)])),rows=el('div');page.append(rows);
+  const pet=select('行为设置伙伴',settings.homeOrder.map(n=>[n,petLabel(settings,n)])),rows=el('div');page.append(rows);
   function mappings(){rows.replaceChildren();const name=pet.value;for(const[event,[label]]of Object.entries(BEHAVIORS)){
     const line=el('label',label);line.className='lp-field';const input=el('select');input.setAttribute('aria-label',label+'动作');
     for(const[value,text]of [['','默认（'+(behaviorAction({behaviorMap:{}},name,event)||'不响应')+'）'],['__none__','不响应'],...actionsFor(name).map(a=>[a,a])]){const o=el('option',text);o.value=value;input.append(o);}
     input.value=settings.behaviorMap[name]?.[event]||'';input.onchange=()=>{if(input.value)(settings.behaviorMap[name]??={})[event]=input.value;else if(settings.behaviorMap[name])delete settings.behaviorMap[name][event];save();refresh();};line.append(input);rows.append(line);
   }rows.append(btn('恢复这只伙伴的行为设置',()=>{delete settings.behaviorMap[name];save();mappings();refresh();}));}
-  pet.onchange=mappings;listActions();listShowcase();mappings();
+  pet.onchange=mappings;listActions();listShowcase();listBuiltins();mappings();
 }

@@ -1,5 +1,6 @@
 import { normalizeCustomization, actionsFor, costumeActionsFor } from './customization.js';
-import { CATALOG } from './catalog.js';
+import { CATALOG, REMOVED_COMBOS } from './catalog.js';
+import { normalizeBuiltins } from './builtin-skins.js';
 const LIMIT=128*1024*1024;
 const MIME=new Set(['image/png','image/jpeg','image/gif','image/webp','image/avif']);
 function base64(bytes){let text='';for(let i=0;i<bytes.length;i+=32768)text+=String.fromCharCode(...bytes.subarray(i,i+32768));return btoa(text);}
@@ -16,7 +17,7 @@ export async function packOutfit(settings,costumes,name){
     }
     (images[pet]??={})[action]=cache.get(source);
   }
-  const bundle={format:'li-pet-outfit',version:1,name:String(name||'我的皮肤').slice(0,60),images,showcase:{...settings.showcase},actionSizes:settings.actionSizes};
+  const bundle={format:'li-pet-outfit',version:1,name:String(name||'我的皮肤').slice(0,60),images,builtinSkins:normalizeBuiltins(settings.builtinSkins),showcase:{...settings.showcase},actionSizes:settings.actionSizes};
   const blob=new Blob([JSON.stringify(bundle)],{type:'application/json'});if(blob.size>LIMIT)throw Error('整套文件超过 128MB，请缩小图片后重试。');return blob;
 }
 export async function applyOutfit(blob,{settings,costumes,save,refresh}){
@@ -29,6 +30,7 @@ export async function applyOutfit(blob,{settings,costumes,save,refresh}){
       const allowed=pet==='组合'?CATALOG.combos:Object.hasOwn(CATALOG.pets,pet)?costumeActionsFor(pet):null;
       if(!allowed||!actions||typeof actions!=='object'||Array.isArray(actions))throw Error('皮肤文件包含未知伙伴。');
       for(const[action,image]of Object.entries(actions)){
+        if(pet==='组合'&&REMOVED_COMBOS.includes(action))continue;
         if(!allowed.includes(action)||!image||!MIME.has(image.type)||typeof image.data!=='string'||image.data.length>12*1024*1024)throw Error('皮肤文件包含无效动作或图片。');
         const text=atob(image.data),bytes=Uint8Array.from(text,c=>c.charCodeAt(0));total+=bytes.length;if(total>LIMIT)throw Error('图片总大小超出限制。');
         const source=await costumes.put(new File([bytes],'costume',{type:image.type}));created.push(source);(skins[pet]??={})[action]=source;
@@ -37,7 +39,8 @@ export async function applyOutfit(blob,{settings,costumes,save,refresh}){
   }catch(error){await Promise.allSettled(created.map(source=>costumes.remove(source)));throw error;}
   const showcase={};for(const name of Object.keys(CATALOG.pets))if(actionsFor(name).includes(bundle.showcase?.[name]))showcase[name]=bundle.showcase[name];
   const oldSources=[...new Set(Object.values(settings.skins).flatMap(actions=>Object.values(actions)))];
-  settings.actionSizes=normalizeCustomization({actionSizes:bundle.actionSizes}).actionSizes;settings.skins=normalizeCustomization({skins}).skins;settings.showcase=showcase;save();await refresh();await Promise.allSettled(oldSources.map(source=>costumes.remove(source)));return bundle.name||'我的皮肤';
+  settings.builtinSkins=normalizeBuiltins(bundle.builtinSkins);
+  settings.actionSizes=normalizeCustomization({actionSizes:bundle.actionSizes}).actionSizes;settings.skins=normalizeCustomization({skins}).skins;settings.showcase=showcase;save();await refresh({builtinChanged:'all'});await Promise.allSettled(oldSources.map(source=>costumes.remove(source)));return bundle.name||'我的皮肤';
 }
 async function localOutfits(mode,operation){
   const db=await new Promise((resolve,reject)=>{const request=indexedDB.open('li-pet-outfits',1);request.onupgradeneeded=()=>request.result.createObjectStore('sets',{keyPath:'id'});request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});

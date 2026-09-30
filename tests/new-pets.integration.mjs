@@ -35,7 +35,7 @@ try {
   const openInteractions=async()=>{await chen.click();await page.getByRole('button',{name:'动作',exact:true}).click();await page.getByRole('button',{name:'互动',exact:true}).click();};
   const end=async()=>{await page.getByRole('button',{name:'关闭动作面板',exact:true}).click();await page.locator('.lp-combo').click();await api(()=>window.__liPetWithLumi.cancelAll());};
   for(const [partner,kind,key] of [['白川','打架','梨梨哥哥-陈野_打架'],['梨梨','贴贴','梨梨兔兔-陈野']]){
-   await openInteractions();assert.equal(await page.getByRole('button',{name:'酒酒狐狸',exact:true}).count(),0);
+   await openInteractions();assert.equal(await page.getByRole('button',{name:'酒酒',exact:true}).count(),0);
    await page.getByRole('button',{name:partner,exact:true}).click();assert.equal(await page.getByRole('button',{name:'叠叠乐',exact:true}).count(),0);
    await page.getByRole('button',{name:kind,exact:true}).click();await page.waitForSelector(`.lp-combo[data-combo="${key}"]`);
    await api(()=>events.emit('GENERATION_STARTED','normal',{},false));assert.equal(await page.locator('.lp-combo').count(),1);await api(()=>events.emit('GENERATION_ENDED'));
@@ -64,7 +64,7 @@ try {
   await page.getByRole('button',{name:'关闭桌宠面板'}).click();
   await page.reload();await page.waitForSelector('.lp-pet');
   assert.equal(await api(()=>window.__liPetWithLumi.wardrobe.get('组合').actions.find(a=>a.action==='梨梨兔兔-梨梨哥哥-陈野_举高高').size),230);
-  await page.click('#lp-wand-entry');assert.equal(await page.locator('.lp-card').count(),8);
+  await page.click('#lp-wand-entry');assert.equal(await page.locator('.lp-card').count(),9);
   await page.screenshot({path:`${screenshots}/new-pets-home-${viewport.width}.png`});
   assert.deepEqual(errors,[]);assert.deepEqual(missing,[]);
   await page.close();console.log('PASS new pets, exact interactions, three-member availability, wardrobe, persistence:',viewport.width);

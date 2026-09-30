@@ -1,0 +1,65 @@
+import {createServer} from 'node:http';
+import {readFile,mkdir,readdir} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+const runtime=process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES;
+const {chromium}=await import(runtime?`${runtime}/playwright/index.mjs`:'playwright');
+const root=path.resolve(fileURLToPath(new URL('..',import.meta.url)));
+const server=createServer(async(req,res)=>{try{const url=new URL(req.url,'http://localhost'),rel=url.pathname==='/'?'tests/fixture.html':decodeURIComponent(url.pathname.replace('/renamed-extension/',''));const file=path.resolve(root,rel);if(!file.startsWith(root+path.sep))throw Error('path');const bytes=await readFile(file);res.writeHead(200,{'Content-Type':({'.html':'text/html','.js':'text/javascript','.css':'text/css','.gif':'image/gif'})[path.extname(file)]||'application/octet-stream'});res.end(bytes);}catch{res.writeHead(404);res.end();}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}`;
+const browser=await chromium.launch({headless:true,executablePath:process.env.LP_CHROMIUM_PATH||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
+const screenshots=process.env.LP_SCREENSHOTS||'/tmp/li-pet-test';await mkdir(screenshots,{recursive:true});
+try {
+ for(const viewport of [{width:1280,height:900},{width:390,height:844}]){
+  const page=await browser.newPage({viewport});page.setDefaultTimeout(12000);
+  const errors=[],missing=[];page.on('pageerror',e=>errors.push(String(e)));page.on('response',r=>{if(r.status()>=400)missing.push(r.url());});
+  await page.goto(url);await page.waitForSelector('.lp-pet');
+  await page.click('#lp-wand-entry');
+  assert.deepEqual(await page.locator('.lp-card strong').allTextContents(),['祈梨','白川','陈野','lumi','lumi哥哥','酒酒','砂金','小黑猫','g老师']);
+  await page.waitForFunction(()=>[...document.querySelectorAll('.lp-card img')].every(n=>n.complete&&n.naturalWidth>0));
+  for(const name of ['梨梨兔兔','梨梨哥哥','千千猫猫','千千哥哥','砂金'])assert.ok((await page.locator(`.lp-card[data-pet="${name}"] img`).getAttribute('src')).includes('/skins/human/'));
+  await page.screenshot({path:`${screenshots}/human-defaults-${viewport.width}.png`});
+  const api=fn=>page.evaluate(fn);
+  const files=await api(async()=>{const m=await import('/renamed-extension/builtin-skins.js');return [...Object.values(m.HUMAN_FILES).flatMap(Object.values),...Object.values(m.HUMAN_COMBOS)];});
+  await page.evaluate(async files=>{for(const file of files){const image=new Image();image.src='/renamed-extension/assets/'+file.split('/').map(encodeURIComponent).join('/');await image.decode();}},files);
+  await page.getByRole('button',{name:'关闭桌宠面板'}).click();
+  await api(()=>{window.__liPetWithLumi.setSetting('actionMode','until-cancel');window.__liPetWithLumi.act('梨梨兔兔','跳舞');window.__liPetWithLumi.openWardrobe('梨梨兔兔');});
+  assert.equal(await page.getByLabel('内置皮肤',{exact:true}).inputValue(),'human');
+  await page.getByLabel('内置皮肤',{exact:true}).selectOption('original');
+  await page.waitForFunction(()=>!document.querySelector('.lp-pet img[alt="祈梨"]').src.includes('/skins/human/'));
+  await page.getByLabel('内置皮肤',{exact:true}).selectOption('human');
+  await page.waitForFunction(()=>document.querySelector('.lp-pet img[alt="祈梨"]').src.includes('/skins/human/'));
+  await page.getByLabel('替换动作',{exact:true}).selectOption('待机');
+  await page.waitForFunction(()=>decodeURI(document.querySelector('.lp-costume-preview').src).endsWith('qili/默认待机.gif'));
+  await page.getByLabel('换装伙伴',{exact:true}).selectOption('梨梨哥哥');
+  await page.waitForFunction(()=>decodeURI(document.querySelector('.lp-costume-preview').src).endsWith('baichuan/默认待机.gif'));
+  await page.getByLabel('替换动作',{exact:true}).selectOption('梨梨兔兔-梨梨哥哥');
+  await page.waitForFunction(()=>decodeURI(document.querySelector('.lp-costume-preview').src).endsWith('baichuan/贴贴.gif'));
+  await page.getByLabel('换装伙伴',{exact:true}).selectOption('千千猫猫');
+  await page.getByLabel('替换动作',{exact:true}).selectOption('千千猫猫-梨梨兔兔_2');
+  await page.waitForFunction(()=>decodeURI(document.querySelector('.lp-costume-preview').src).endsWith('lumi/叠叠乐.gif'));
+  // Deleted scenes cannot reappear in the wardrobe or workbench API.
+  await page.getByLabel('换装伙伴',{exact:true}).selectOption('组合');
+  const multi=await api(async()=>{const {comboNames}=await import('/renamed-extension/core.js');return window.__liPetWithLumi.wardrobe.get('组合').actions.filter(a=>comboNames(a.action).length>=3).map(a=>a.action);});
+  assert.deepEqual(multi,['梨梨兔兔-梨梨哥哥-陈野_举高高','梨梨兔兔-梨梨哥哥-陈野_牵手手']);
+  await page.getByLabel('换装伙伴',{exact:true}).selectOption('砂金');assert.ok(await page.getByLabel('内置皮肤',{exact:true}).isDisabled());
+  await api(()=>window.__liPetWithLumi.setPetOn('砂金',true));
+  await page.getByRole('button',{name:'关闭桌宠面板'}).click();
+  const gold=page.locator('.lp-pet').filter({has:page.locator('img[alt="砂金"]')});
+  await page.waitForFunction(()=>{const i=document.querySelector('img[alt="砂金"]');return i&&i.complete&&i.naturalWidth>0});
+  await api(()=>window.__liPetWithLumi.act('砂金','听音乐'));await page.waitForFunction(()=>document.querySelector('img[alt="砂金"]').src.includes('21-'));
+  await api(()=>window.__liPetWithLumi.cancelAll());await gold.click();await page.getByRole('button',{name:'动作',exact:true}).click();await page.getByRole('button',{name:'互动',exact:true}).click();
+  assert.equal(await page.getByText('桌面上还没有可以一起互动的伙伴。',{exact:true}).count(),1);
+  await page.getByRole('button',{name:'关闭动作面板'}).click();
+  await api(()=>window.__liPetWithLumi.wardrobe.setBuiltin('梨梨兔兔','original'));await page.reload();await page.waitForSelector('.lp-pet');
+  assert.equal(await api(()=>window.__liPetWithLumi.wardrobe.get('梨梨兔兔').builtinSkin),'original');
+  await api(()=>window.__liPetWithLumi.wardrobe.setBuiltin('梨梨兔兔','human'));
+  await page.click('#lp-wand-entry');await page.getByRole('button',{name:'砂金前移',exact:true}).click();
+  assert.equal((await page.locator('.lp-card strong').allTextContents())[5],'砂金');
+  await page.getByRole('button',{name:'恢复默认排序',exact:true}).click();
+  assert.equal((await page.locator('.lp-card strong').allTextContents())[6],'砂金');
+  await page.locator('.lp-card[data-pet="砂金"]').scrollIntoViewIfNeeded();await page.screenshot({path:`${screenshots}/human-defaults-bottom-${viewport.width}.png`});
+  assert.deepEqual(errors,[]);assert.deepEqual(missing,[]);await page.close();console.log('PASS built-in skins, supplied idles, names/order, pair skins, Aventurine, deleted scenes and persistence:',viewport.width);
+ }
+}finally{await browser.close();server.close();}

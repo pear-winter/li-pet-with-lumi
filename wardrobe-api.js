@@ -1,4 +1,5 @@
 import { CATALOG } from './catalog.js';
+import { builtinOptions, builtinId, selectBuiltin } from './builtin-skins.js';
 import { PETS, petLabel, comboNames, comboKind } from './core.js';
 import { costumeActionsFor, validSource } from './customization.js';
 import { listOutfits, saveOutfit, applySavedOutfit, deleteOutfit, exportOutfit, applyOutfit } from './outfits.js';
@@ -27,7 +28,7 @@ export function createWardrobeApi({ settings, save, costumes, refresh }) {
     get(name) {
       const st = settings(), list = actionsOf(name);
       if (!list) throw Error('没有这只伙伴。');
-      return { actions: list.map(action => ({
+      return { builtinSkin:builtinId(st,name),builtinSkins:builtinOptions(name),actions: list.map(action => ({
         action,
         label: name === '组合' ? comboLabel(st, action) : undefined,
         custom: !!st.skins[name]?.[action],
@@ -35,6 +36,7 @@ export function createWardrobeApi({ settings, save, costumes, refresh }) {
         base: inherited(st, name, action)
       })) };
     },
+    async setBuiltin(name,id){const st=settings();selectBuiltin(st,name,id);save();await refresh({builtinChanged:name});},
     async setImage(name, action, src) {
       check(name, action);
       let source;
