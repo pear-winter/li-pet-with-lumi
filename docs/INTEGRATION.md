@@ -58,3 +58,12 @@ SillyTavern 通过 `window.SillyTavern.getContext()` 访问 `extensionSettings`�
 ### 0.3.7 独立尺寸
 
 `window.__liPetWithLumi.setPetSize(name, pixels)` 设置单只伙伴大小（48–240px）；`getState().pets` 每项的 `size` 为实际配置尺寸。原 `setSetting('size', pixels)` 调整未覆盖伙伴的默认大小。
+
+
+## 0.3.11：异名动作与明确互动
+
+- `catalog.js` 的 `CHENYE_FILES` 把陈野的原动作名映射到上传 GIF 文件名；`COMBO_FILES` 将四个固定组合标识映射到原互动文件。所有素材在本地，不在运行时依赖 GitHub。
+- `customization.js` 的 `resolvePetAction` 仅将陈野运行时通用状态映射到已有动作，`actionsFor` 不额外列入虚构的陈野动作。默认待机为发呆，皮肤继承与动作大小按真实动作键保存。
+- `core.js` 的 `comboNames / comboKind / combosFor` 统一解析成员、动作名称与在场条件，供动作菜单、换装页和工作台 API 共用；`comboFor` 仍只返回普通贴贴／叠叠乐，不返回特殊场景。
+- 动作菜单通过 `requestCombo` 播放明确选择的组合，验证全体成员在场；异步读取 GIF 时若成员移除或选择新动作，则取消旧请求。沿用主动动作时长、锁定、取消与尺寸设置。
+- 白川 = 梨梨哥哥，梨梨 = 梨梨兔兔。不要将素材中的陈野三人组合套用普通 `_2` 叠叠乐，或用它替代双人素材。

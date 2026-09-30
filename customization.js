@@ -8,9 +8,13 @@ export const BEHAVIORS = {
   idle:['待机','待机'], sleep:['睡觉','睡觉'], walkLeft:['向左散步','向左走'], walkRight:['向右散步','向右走'],
   fall:['下落','掉落'], land:['落地','摔趴趴'],
 };
-export const actionsFor=name=>[...new Set([...(CATALOG.pets[name]||[]),'听音乐','摸摸头'])];
+// 陈野只列出素材中真实存在的动作；运行时的通用状态映射到这些原动作。
+const CHENYE_ALIASES = {'待机':'发呆','向左走':'爬爬_向左','向右走':'爬爬_向右','睡觉':'趴着睡','敲代码':'打工中','吃饭':'吃饭团','开心蹦蹦':'开心','害羞':'害羞捂脸','打招呼':'嗨','听音乐':'听歌'};
+export const idleAction=name=>name==='陈野'?'发呆':'待机';
+export const resolvePetAction=(name,action)=>name==='陈野'?(CATALOG.pets[name].includes(action)?action:CHENYE_ALIASES[action]||'发呆'):action;
+export const actionsFor=name=>name==='陈野'?[...CATALOG.pets[name]]:[...new Set([...(CATALOG.pets[name]||[]),'听音乐','摸摸头'])];
 export const costumeActionsFor=name=>['通用皮肤',...actionsFor(name)];
-export function skinSource(settings,name,action){const skins=settings.skins[name]||{};if(name==='组合')return skins[action];return skins[action]||skins['通用皮肤']||skins[settings.showcase[name]||'待机']||skins['待机'];}
+export function skinSource(settings,name,action){const skins=settings.skins[name]||{};if(name==='组合')return skins[action];return skins[resolvePetAction(name,action)]||skins['通用皮肤']||skins[settings.showcase[name]||idleAction(name)]||skins[idleAction(name)];}
 export function validSource(value){
   if(typeof value!=='string'||value.length>4096)return '';
   if(/^local:[a-f0-9-]{36}$/i.test(value))return value;
@@ -31,6 +35,12 @@ export function behaviorAction(settings,name,event){
   if(saved==='__none__')return '';
   if(saved&&actionsFor(name).includes(saved))return saved;
   if(event==='reading'&&name!=='灰鸮g老师')return '';
+  if(name==='陈野'){
+    if(event==='typing')return '聊天中';
+    if(event==='wake')return '惊醒';
+    if(event==='fall'||event==='land')return ''; // 没有掉落／摔趴素材，物理移动期间保持待机。
+    return resolvePetAction(name,BEHAVIORS[event]?.[1]);
+  }
   return BEHAVIORS[event]?.[1]||'待机';
 }
 // Files stay in this browser. Only opaque references live in the user's extension settings.

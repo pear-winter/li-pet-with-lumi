@@ -16,13 +16,13 @@ try{
   await page.goto(url);await page.waitForSelector('.lp-pet');assert.equal(await page.locator('.lp-pet').count(),2);
   assert.equal(await page.locator('#lp-wand-entry').count(),1);
   await page.keyboard.press('Escape');await page.click('#lp-wand-entry');await page.waitForSelector('#lp-dialog[open]');
-  assert.equal(await page.locator('.lp-card').count(),6);
+  assert.equal(await page.locator('.lp-card').count(),8);
   await page.screenshot({path:`${screenshots}/home-${viewport.width}.png`});
   assert.ok(await page.evaluate(()=>{const r=document.getElementById('lp-dialog').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&r.height<=innerHeight}));
   assert.equal(await page.getByRole('button',{name:'一起做事',exact:true}).count(),0);assert.equal(await page.getByRole('button',{name:'陪伴日记',exact:true}).count(),0);
   const selectedCard=page.locator('.lp-card[aria-pressed=true]').first(),unselectedCard=page.locator('.lp-card[aria-pressed=false]').first();
   assert.notEqual(await selectedCard.evaluate(n=>getComputedStyle(n).backgroundColor),await unselectedCard.evaluate(n=>getComputedStyle(n).backgroundColor));assert.ok((await selectedCard.textContent()).includes('✓ 已选中'));
-  await page.getByRole('button',{name:'小设置',exact:true}).click();await page.locator('.lp-names summary').click();await page.getByLabel('梨梨兔兔的名字',{exact:true}).fill('小梨');await page.getByLabel('梨梨兔兔的名字',{exact:true}).press('Tab');
+  await page.getByRole('button',{name:'小设置',exact:true}).click();await page.getByText('每只伙伴的名字',{exact:true}).click();await page.getByLabel('梨梨兔兔的名字',{exact:true}).fill('小梨');await page.getByLabel('梨梨兔兔的名字',{exact:true}).press('Tab');
   await page.getByRole('button',{name:'小小伙伴',exact:true}).click();assert.ok(await page.locator('.lp-card').getByText('小梨',{exact:true}).count());assert.equal(await page.getByLabel('选择互动伙伴').locator('option[value="梨梨兔兔"]').textContent(),'小梨');
   await page.getByRole('button',{name:'换装动作',exact:true}).click();assert.equal(await page.getByLabel('换装伙伴',{exact:true}).locator('option[value="梨梨兔兔"]').textContent(),'小梨');
   await page.getByRole('button',{name:'关闭桌宠面板'}).click();
@@ -131,7 +131,7 @@ try{
   await page.evaluate(()=>window.advance=121000);await page.waitForFunction(()=>document.querySelector('.lp-pet').dataset.state==='听音乐');
   await page.evaluate(()=>{restoreActionClock();document.querySelector('.ll-player').remove();});
   await openActions();await quick.getByRole('button',{name:'互动',exact:true}).click();
-  assert.deepEqual(await quick.locator('button:not(.lp-quick-close)').allTextContents(),['千千猫猫','返回','关闭动作面板']);
+  assert.deepEqual(await quick.locator('button:not(.lp-quick-close)').allTextContents(),['千千猫猫','与 千千猫猫、千千哥哥 · 贴贴','与 千千猫猫、千千哥哥 · 叠叠乐','返回','关闭动作面板']);
   await quick.getByRole('button',{name:'千千猫猫',exact:true}).click();await quick.getByRole('button',{name:'贴贴',exact:true}).click();await page.waitForSelector('.lp-combo');await page.waitForTimeout(100);assert.ok(await quick.isVisible());assert.equal(await page.locator('.lp-combo').count(),1);
   await page.evaluate(()=>{const original=Date.now;window.advance=0;window.restoreActionClock=()=>Date.now=original;Date.now=()=>original()+window.advance;events.emit('GENERATION_STARTED','normal',{},false);events.emit('GENERATION_STOPPED');events.emit('CHAT_CHANGED');const music=document.createElement('div');music.className='ll-player is-playing';document.body.append(music);window.advance=119000;});
   await page.waitForTimeout(400);assert.equal(await page.locator('.lp-combo').count(),1);
