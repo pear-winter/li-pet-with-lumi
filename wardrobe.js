@@ -47,7 +47,7 @@ export function renderWardrobe({page,settings,save,costumes,resolveImage,refresh
 
   async function replace(source,name,a){if(!page.isConnected){await costumes.remove(source);return;}const old=settings.skins[name]?.[a];if(source)(settings.skins[name]??={})[a]=source;else if(settings.skins[name])delete settings.skins[name][a];save();await refresh();if(old&&old!==source){try{await costumes.remove(old);}catch{}}await previewCurrent();}
   // 0.3.10：本地上传改成和其他按钮一样的按钮，不再显示系统自带的文件框
-  const upload=el('input');upload.type='file';upload.accept='image/png,image/jpeg,image/gif,image/webp,image/avif';upload.hidden=true;
+  const upload=el('input');upload.type='file';upload.setAttribute('aria-label','本地上传图片');upload.accept='image/png,image/jpeg,image/gif,image/webp,image/avif';upload.hidden=true;
   const uploadBtn=btn('上传本地图片',()=>upload.click());
   const controls=el('div');controls.className='lp-row';
   controls.append(uploadBtn,btn('保存图片链接',async()=>{const source=validSource(url.value.trim());if(!source||source.startsWith('local:')){tell('请输入有效的 http 或 https 图片链接。');return;}await replace(source,target(),action.value);tell('动作图片已保存。');}),btn('恢复此动作',async()=>{await replace('',target(),action.value);tell('已恢复默认动作图片。');}),upload);page.append(controls);
