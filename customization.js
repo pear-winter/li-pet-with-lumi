@@ -29,9 +29,9 @@ export function skinSource(settings,name,action){
  if(name==='组合'){
    const members=action.split('_')[0].split('-');
    const candidates=members.map(p=>({source:settings.skinCombos?.[p]?.[action]||
-     (BUILTIN_SKINS[p]?defaultComboSource(action,settings.builtinSkins?.[p]==='classic'):null),time:settings.skinChangedAt?.[p]||0}));
-   if(skins[action])candidates.push({source:skins[action],time:settings.skinChangedAt?.['组合']||0});
-   return candidates.filter(c=>c.source).sort((a,b)=>b.time-a.time)[0]?.source;
+     (BUILTIN_SKINS[p]?defaultComboSource(action,settings.builtinSkins?.[p]==='classic'):null),time:settings.skinChangedAt?.[p]||0,custom:!!settings.skinCombos?.[p]?.[action]}));
+   if(skins[action])candidates.push({source:skins[action],time:settings.skinChangedAt?.['组合']||0,custom:true});
+   return candidates.filter(c=>c.source).sort((a,b)=>b.time-a.time||Number(b.custom)-Number(a.custom))[0]?.source;
  }
  return skins[resolvePetAction(name,action)]||skins['通用皮肤']||skins[settings.showcase[name]||idleAction(name)]||skins[idleAction(name)];
 }
