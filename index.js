@@ -1,3 +1,4 @@
+import { createChatTools } from './chat-tools.js';
 import { HUMAN_COMBOS } from './builtins.js';
 import { createWardrobeApi } from './wardrobe-api.js';
 import { createCostumeStore, behaviorAction, actionsFor, skinSource, resolvePetAction } from './customization.js';
@@ -46,7 +47,10 @@ export function boot(){
   function quick(p,magic=false){selected=p.name;menu.replaceChildren(quickHeader(magic?'魔法门':label(p.name)));menu.hidden=false;
     const add=(label,fn)=>menu.append(button(label,fn));
     if(magic){for(const[id,label]of Object.entries(WORKBENCH_PAGES))add(label,()=>launch(id));add('喵喵星绘',()=>launch('meow'));add('梨梨画室',()=>launch('atelier'));add('打开设置面板',()=>{hideMenu();open('settings',p.node);});add('返回',()=>quick(p));}
-    else{add('喂食',()=>{hideMenu();feed(p.name);});add('摸摸',()=>{hideMenu();pet(p.name);});add('动作',()=>actionMenu(p));add('魔法门',()=>quick(p,true));}
+    else{add('喂食',()=>{hideMenu();feed(p.name);});add('摸摸',()=>{hideMenu();pet(p.name);});add('动作',()=>actionMenu(p));add('魔法门',()=>quick(p,true));
+      for(const [name,kind] of [['跳转顶楼','top'],['跳到最底','bottom'],['上一楼层','previous'],['下一楼层','next'],['跳转最新','latest']])add(name,()=>{hideMenu();chatTools.navigate(kind).catch(e=>tell(e.message));});
+      for(const [name,fn] of [['查找替换',()=>chatTools.search(true)],['指定跳转',()=>chatTools.specified()],['查找跳转',()=>chatTools.search(false)]])add(name,()=>{hideMenu();try{fn();}catch(e){tell(e.message);}});
+    }
     positionMenu(p);menu.querySelector('button')?.focus();}
   function positionMenu(p){
     const v=viewport(),box=p.node.getBoundingClientRect();let top=box.top,bottom=box.bottom,center=box.left+box.width/2;
@@ -85,7 +89,8 @@ export function boot(){
   on(document,'keydown',e=>{if(e.key==='Escape'&&!menu.hidden){hideMenu();pets.get(selected)?.node.focus();}});
   const toast=el('div');toast.id='lp-toast';toast.setAttribute('role','status');toast.hidden=true;document.body.append(toast);
   let toastTimer;
-  function tell(text){(dialog.open?dialog:document.body).append(toast);toast.textContent=text;toast.hidden=false;clearTimeout(toastTimer);toastTimer=later(()=>toast.hidden=true,4200);}
+  function tell(text){(document.querySelector('.lp-chat-dialog[open]')||(dialog.open?dialog:document.body)).append(toast);toast.textContent=text;toast.hidden=false;clearTimeout(toastTimer);toastTimer=later(()=>toast.hidden=true,4200);}
+  const chatTools=createChatTools({context,tell,theme:()=>settings.theme,busy:()=>chatBusy});
   const head=el('header','lp-header'),brand=el('div');brand.append(el('span','lp-eyebrow','LILI × LUMI / TAVERN COMPANIONS'),el('h2','','梨间雪'),el('p','','把一点小小的陪伴，放进酒馆里。'));
   const close=button('×',()=>dialog.close(),'lp-close');close.setAttribute('aria-label','关闭桌宠面板');head.append(brand,close);
   const nav=el('nav','lp-tabs');nav.setAttribute('aria-label','桌宠面板分页');
@@ -93,7 +98,7 @@ export function boot(){
   for(const [id,label] of [['home','小小伙伴'],['settings','小设置'],['wardrobe','换装动作']]){
     const b=button(label,()=>showTab(id));b.dataset.tab=id;nav.append(b);const p=el('section','lp-page');p.hidden=true;pages.set(id,p);body.append(p);
   }
-  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.12');dialog.append(head,nav,body,foot);
+  const foot=el('footer','lp-footer','梨梨 × Lumi · 陪伴版 0.3.15');dialog.append(head,nav,body,foot);
   function showTab(id){if(!pages.has(id))id='home';tab=id;for(const[k,p]of pages)p.hidden=k!==id;for(const b of nav.children)b.setAttribute('aria-selected',String(b.dataset.tab===id));if(id==='wardrobe')renderWardrobe({page:pages.get(id),settings,save,costumes,resolveImage,refresh:refreshCostumes,tell,selected});}
   function open(id='home',opener=null){hideMenu();lastOpener=opener||document.activeElement;renderHome();renderSettings();showTab(id);if(!dialog.open)dialog.showModal();panelOpen=true;close.focus();}
   on(dialog,'close',()=>{panelOpen=false;lastOpener?.isConnected&&lastOpener.focus?.();});
@@ -245,12 +250,12 @@ export function boot(){
   listen('GENERATION_STARTED',(type,options,dryRun)=>{if(dryRun||type==='quiet')return;chatBusy=true;chatStarted=Date.now();if(settings.react){endCombo(false);for(const p of pets.values()){if(locked(p))continue;p.manual='';p.lastTouch=Date.now();showAction(p,mapped(p,'generation')||'待机');}}if(settings.react)allSay('正在写回复，我陪你一起等。');});
   const stop=()=>{chatBusy=false;typingUntil=0;};
   function eventAction(event){if(settings.react)for(const p of pets.values()){const a=mapped(p,event);if(a&&!locked(p))manual(p,a,'',1800);}}
-  listen('GENERATION_ENDED',()=>{const was=chatBusy;stop();if(was){eventAction('finish');if(settings.react)allSay('这一轮结束啦。');}});listen('GENERATION_STOPPED',()=>{stop();eventAction('stop');});listen('CHAT_CHANGED',()=>{stop();endCombo(false);eventAction('chatChange');});
+  listen('GENERATION_ENDED',()=>{const was=chatBusy;stop();if(was){eventAction('finish');if(settings.react)allSay('这一轮结束啦。');}});listen('GENERATION_STOPPED',()=>{stop();eventAction('stop');});listen('CHAT_CHANGED',()=>{chatTools.reset();stop();endCombo(false);eventAction('chatChange');});
   on(document,'input',e=>{if(e.target?.id==='send_textarea'){typingUntil=Date.now()+2300;for(const p of pets.values())p.lastTouch=Date.now();}});
   const resized=()=>{hideMenu();endCombo(false);if(group){const v=viewport(),r=group.node.getBoundingClientRect();group.node.style.left=clamp(r.left,v.left+4,v.left+v.width-r.width-4)+'px';group.node.style.top=clamp(r.top,v.top+4,v.top+v.height-r.height-4)+'px';}for(const p of pets.values())place(p);};on(window,'resize',resized);if(window.visualViewport){on(window.visualViewport,'resize',resized);on(window.visualViewport,'scroll',resized);}
   on(document,'visibilitychange',()=>{lastFrame=0;if(!document.hidden){resized();activityTick();}});
   on(window,'pagehide',()=>dispose());
-  function dispose(){if(disposed)return;disposed=true;clearTimeout(notifyTimer);listeners.clear();cancelAnimationFrame(frame);clearInterval(poll);clearInterval(musicPoll);for(const id of timers)clearTimeout(id);for(const fn of cleanups)fn();for(const p of pets.values()){remember(p);clearPlayback(p);}if(group?.playbackURL)URL.revokeObjectURL(group.playbackURL);save();dialog.close();layer.remove();dialog.remove();toast.remove();menu.remove();customStyle.remove();costumes.dispose();entry.remove();settingsContainer.remove();if(window[OWNER]?.dispose===dispose)delete window[OWNER];}
+  function dispose(){if(disposed)return;disposed=true;chatTools.dispose();clearTimeout(notifyTimer);listeners.clear();cancelAnimationFrame(frame);clearInterval(poll);clearInterval(musicPoll);for(const id of timers)clearTimeout(id);for(const fn of cleanups)fn();for(const p of pets.values()){remember(p);clearPlayback(p);}if(group?.playbackURL)URL.revokeObjectURL(group.playbackURL);save();dialog.close();layer.remove();dialog.remove();toast.remove();menu.remove();customStyle.remove();costumes.dispose();entry.remove();settingsContainer.remove();if(window[OWNER]?.dispose===dispose)delete window[OWNER];}
   let workbenchMusic=false;on(window,'lili-music-state',e=>{workbenchMusic=!!e.detail?.playing;musicTick();});
   function musicTick(){if(document.hidden)return;const next=settings.enabled&&settings.music&&(isMusicPlaying()||workbenchMusic);if(next&&!musicPlaying){endCombo(false);for(const p of pets.values()){if(locked(p))continue;p.lastTouch=Date.now();if(!['吃饭','摸摸头','摔趴趴'].includes(p.manual))p.manual='';}allSay('♪ 一起听音乐吧。');}musicPlaying=next;}
   const musicPoll=setInterval(musicTick,300);applyTheme();musicTick();

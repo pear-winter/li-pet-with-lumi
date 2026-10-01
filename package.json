@@ -1,10 +1,10 @@
 {
   "name": "li-pet-with-lumi",
   "private": true,
-  "version": "0.3.14",
+  "version": "0.3.15",
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "check": "node --check index.js && node --check adapters.js && node --check core.js && node --check music.js && node --check customization.js && node --check wardrobe.js && node --check playback.js && node --check outfits.js && node --check wardrobe-api.js"
+    "check": "node --check index.js && node --check chat-tools.js && node --check adapters.js && node --check core.js && node --check music.js && node --check customization.js && node --check wardrobe.js && node --check playback.js && node --check outfits.js && node --check wardrobe-api.js"
   }
 }
